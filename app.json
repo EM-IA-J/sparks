@@ -10,10 +10,11 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#6366F1"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.sparks"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,6 +25,23 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications"
+    ],
+    "scheme": "sparks",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "197a85c4-64b1-438f-bc1b-888857bba20d"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/197a85c4-64b1-438f-bc1b-888857bba20d"
     }
   }
 }

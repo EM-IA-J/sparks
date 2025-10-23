@@ -1,0 +1,173 @@
+import { Achievement } from '../types';
+
+export const ACHIEVEMENTS: Achievement[] = [
+  // Streak achievements
+  {
+    id: 'streak_3',
+    title: 'Getting Started',
+    description: 'Complete 3 days in a row',
+    icon: '🔥',
+    category: 'streak',
+    requirement: 3,
+  },
+  {
+    id: 'streak_7',
+    title: 'Week Warrior',
+    description: 'Maintain a 7-day streak',
+    icon: '⚡',
+    category: 'streak',
+    requirement: 7,
+  },
+  {
+    id: 'streak_30',
+    title: 'Month Master',
+    description: 'Complete 30 days straight',
+    icon: '💎',
+    category: 'streak',
+    requirement: 30,
+  },
+  {
+    id: 'streak_100',
+    title: 'Centurion',
+    description: '100 days of consistency',
+    icon: '👑',
+    category: 'streak',
+    requirement: 100,
+  },
+
+  // Total completion achievements
+  {
+    id: 'total_1',
+    title: 'First Spark',
+    description: 'Complete your first challenge',
+    icon: '✨',
+    category: 'total',
+    requirement: 1,
+  },
+  {
+    id: 'total_10',
+    title: 'Spark Collector',
+    description: 'Complete 10 challenges',
+    icon: '🌟',
+    category: 'total',
+    requirement: 10,
+  },
+  {
+    id: 'total_42',
+    title: 'Marathonian',
+    description: 'Complete 42 sparks (like a marathon!)',
+    icon: '🏃',
+    category: 'total',
+    requirement: 42,
+  },
+  {
+    id: 'total_100',
+    title: 'Century Club',
+    description: 'Reach 100 completed challenges',
+    icon: '💯',
+    category: 'total',
+    requirement: 100,
+  },
+  {
+    id: 'total_365',
+    title: 'Legendary',
+    description: '365 sparks completed',
+    icon: '🏆',
+    category: 'total',
+    requirement: 365,
+  },
+
+  // Timing achievements
+  {
+    id: 'morning_routine',
+    title: 'Morning Person',
+    description: 'Complete 7 morning sparks',
+    icon: '🌅',
+    category: 'timing',
+    requirement: 7,
+  },
+  {
+    id: 'night_owl',
+    title: 'Night Owl',
+    description: 'Complete 7 evening sparks',
+    icon: '🌙',
+    category: 'timing',
+    requirement: 7,
+  },
+
+  // Area-specific achievements
+  {
+    id: 'health_master',
+    title: 'Health Hero',
+    description: 'Complete 20 health challenges',
+    icon: '💪',
+    category: 'area',
+    requirement: 20,
+  },
+  {
+    id: 'creative_genius',
+    title: 'Creative Genius',
+    description: 'Complete 20 creativity challenges',
+    icon: '🎨',
+    category: 'area',
+    requirement: 20,
+  },
+  {
+    id: 'social_butterfly',
+    title: 'Social Butterfly',
+    description: 'Complete 20 social challenges',
+    icon: '🦋',
+    category: 'area',
+    requirement: 20,
+  },
+  {
+    id: 'nature_lover',
+    title: 'Nature Lover',
+    description: 'Complete 20 nature challenges',
+    icon: '🌿',
+    category: 'area',
+    requirement: 20,
+  },
+  {
+    id: 'focus_master',
+    title: 'Focus Master',
+    description: 'Complete 20 focus challenges',
+    icon: '🎯',
+    category: 'area',
+    requirement: 20,
+  },
+
+  // Special achievements
+  {
+    id: 'no_swap',
+    title: 'Committed',
+    description: 'Complete 10 challenges without swapping',
+    icon: '🤝',
+    category: 'special',
+    requirement: 10,
+  },
+  {
+    id: 'speed_demon',
+    title: 'Speed Demon',
+    description: 'Complete 5 challenges early',
+    icon: '⚡',
+    category: 'special',
+    requirement: 5,
+  },
+  {
+    id: 'all_areas',
+    title: 'Renaissance Soul',
+    description: 'Complete challenges in all 8 areas',
+    icon: '🌈',
+    category: 'special',
+    requirement: 8,
+  },
+  {
+    id: 'feedback_fire',
+    title: 'On Fire',
+    description: 'Give 🔥 feedback 10 times',
+    icon: '🔥',
+    category: 'special',
+    requirement: 10,
+  },
+];
