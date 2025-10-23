@@ -14,7 +14,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.sparks"
+      "bundleIdentifier": "com.jaimegarcia.sparks",
+      "buildNumber": "1",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"],
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized notifications to you.",
+        "NSCameraUsageDescription": "Allow Sparks to access your camera to capture photos of completed challenges.",
+        "NSPhotoLibraryUsageDescription": "Allow Sparks to access your photo library to save challenge photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
