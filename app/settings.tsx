@@ -75,26 +75,40 @@ export default function SettingsScreen() {
       minute: selectedTime.getMinutes(),
     };
 
-    updateUser({
-      areas: [selectedArea], // Save as single-item array
-      cadence,
-      notifWindow,
-      notificationTime,
-      socialOptIn,
-    });
+    try {
+      // Update notification schedule with new time and cadence
+      await NotificationService.scheduleDailyNotificationWithTime(notificationTime, cadence);
 
-    // Update notification schedule with new time and cadence
-    await NotificationService.scheduleDailyNotificationWithTime(notificationTime, cadence);
+      // Update gentle nudge (4 hours after daily notification)
+      await NotificationService.scheduleGentleNudge(notificationTime, cadence);
 
-    // Update gentle nudge (4 hours after daily notification)
-    await NotificationService.scheduleGentleNudge(notificationTime);
+      // Update streak at risk notification based on current streak
+      if (user?.streak) {
+        await NotificationService.scheduleStreakAtRisk(user.streak);
+      }
 
-    // Update streak at risk notification based on current streak
-    if (user?.streak) {
-      await NotificationService.scheduleStreakAtRisk(user.streak);
+      // Update user settings
+      updateUser({
+        areas: [selectedArea], // Save as single-item array
+        cadence,
+        notifWindow,
+        notificationTime,
+        socialOptIn,
+      });
+
+      Alert.alert('Saved', 'Your settings have been updated');
+    } catch (error) {
+      console.error('Error updating notifications:', error);
+      Alert.alert(
+        'Error',
+        'Could not update notifications. Please try again.',
+        [
+          {
+            text: 'OK',
+          }
+        ]
+      );
     }
-
-    Alert.alert('Saved', 'Your settings have been updated');
   };
 
   const handleShareProgress = async () => {

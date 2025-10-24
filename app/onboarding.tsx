@@ -80,20 +80,38 @@ export default function OnboardingScreen() {
       minute: selectedTime.getMinutes(),
     };
 
-    // Request notification permissions
-    await NotificationService.requestPermissions();
-    await NotificationService.scheduleDailyNotificationWithTime(notificationTime, cadence);
+    try {
+      // Request notification permissions
+      await NotificationService.requestPermissions();
+      await NotificationService.scheduleDailyNotificationWithTime(notificationTime, cadence);
 
-    // Schedule gentle nudge (4 hours after daily notification)
-    await NotificationService.scheduleGentleNudge(notificationTime);
+      // Schedule gentle nudge (4 hours after daily notification)
+      await NotificationService.scheduleGentleNudge(notificationTime, cadence);
 
-    // Note: Streak at risk notification will be scheduled once user builds a streak >= 3
+      // Note: Streak at risk notification will be scheduled once user builds a streak >= 3
 
-    // Complete onboarding (pass as single-item array for compatibility)
-    completeOnboarding([selectedArea], cadence, notifWindow, socialOptIn, notificationTime);
+      // Complete onboarding (pass as single-item array for compatibility)
+      completeOnboarding([selectedArea], cadence, notifWindow, socialOptIn, notificationTime);
 
-    // Navigate to main app
-    router.replace('/(tabs)');
+      // Navigate to main app
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Error setting up notifications:', error);
+      Alert.alert(
+        'Warning',
+        'Could not set up notifications. You can try again in Settings.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Still complete onboarding even if notifications fail
+              completeOnboarding([selectedArea], cadence, notifWindow, socialOptIn, notificationTime);
+              router.replace('/(tabs)');
+            }
+          }
+        ]
+      );
+    }
   };
 
   return (
