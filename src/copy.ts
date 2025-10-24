@@ -53,13 +53,9 @@ export const COPY = {
   notifications: {
     dailyTitle: "Your spark is ready",
     dailyBody: "Time to ignite something new today",
-    timerUpTitle: "Starting Spark!",
-    timerUpBody: "Your challenge begins now",
-    sparkStartTitle: "Starting Spark!",
-    sparkStartBody: "Your challenge begins now",
-    sparkCompleteTitle: "Spark Complete!",
-    sparkCompleteBody: "Great job! Keep the momentum going",
-    feedbackCompleteTitle: "Amazing!",
-    feedbackCompleteBody: "You're building momentum. See you tomorrow!",
+    gentleNudgeTitle: "Still time for today's spark ⚡",
+    gentleNudgeBody: "Your challenge is waiting. Just 20 minutes to make a difference.",
+    streakAtRiskTitle: "Don't break your streak!",
+    streakAtRiskBody: "You've come so far. Complete today's spark before midnight.",
   },
 };

@@ -84,6 +84,11 @@ export default function OnboardingScreen() {
     await NotificationService.requestPermissions();
     await NotificationService.scheduleDailyNotificationWithTime(notificationTime, cadence);
 
+    // Schedule gentle nudge (4 hours after daily notification)
+    await NotificationService.scheduleGentleNudge(notificationTime);
+
+    // Note: Streak at risk notification will be scheduled once user builds a streak >= 3
+
     // Complete onboarding (pass as single-item array for compatibility)
     completeOnboarding([selectedArea], cadence, notifWindow, socialOptIn, notificationTime);
 

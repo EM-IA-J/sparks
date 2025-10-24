@@ -86,6 +86,14 @@ export default function SettingsScreen() {
     // Update notification schedule with new time and cadence
     await NotificationService.scheduleDailyNotificationWithTime(notificationTime, cadence);
 
+    // Update gentle nudge (4 hours after daily notification)
+    await NotificationService.scheduleGentleNudge(notificationTime);
+
+    // Update streak at risk notification based on current streak
+    if (user?.streak) {
+      await NotificationService.scheduleStreakAtRisk(user.streak);
+    }
+
     Alert.alert('Saved', 'Your settings have been updated');
   };
 

@@ -15,9 +15,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jaimegarcia.sparks",
-      "buildNumber": "1",
+      "buildNumber": "6",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"],
+        "UIBackgroundModes": ["remote-notification", "fetch"],
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized notifications to you.",
         "NSCameraUsageDescription": "Allow Sparks to access your camera to capture photos of completed challenges.",
         "NSPhotoLibraryUsageDescription": "Allow Sparks to access your photo library to save challenge photos."

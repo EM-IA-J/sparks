@@ -138,14 +138,15 @@ export default function HomeScreen() {
   const handleStart = async () => {
     startChallenge();
 
+    // Cancel gentle nudge since user started the spark
+    await NotificationService.cancelGentleNudge();
+
     // Check if breathing should be skipped based on preference
     if (user?.breathingPreference === 'never') {
       // Skip breathing, go straight to timer
       setTimerRunning(true);
       const totalSeconds = currentTemplate?.durationMin ? currentTemplate.durationMin * 60 : DEFAULT_TIMER;
       await StorageService.saveTimerState(Date.now(), totalSeconds);
-      const durationMin = currentTemplate?.durationMin || 20;
-      NotificationService.scheduleTimerNotification(durationMin);
     } else {
       setShowBreathing(true);
     }
@@ -177,10 +178,6 @@ export default function HomeScreen() {
     // Save timer start time for persistence
     const totalSeconds = currentTemplate?.durationMin ? currentTemplate.durationMin * 60 : DEFAULT_TIMER;
     await StorageService.saveTimerState(Date.now(), totalSeconds);
-
-    // Schedule notification for timer completion
-    const durationMin = currentTemplate?.durationMin || 20;
-    NotificationService.scheduleTimerNotification(durationMin);
   };
 
   const handleComplete = async () => {
@@ -190,18 +187,18 @@ export default function HomeScreen() {
 
     // Clear timer state from storage
     await StorageService.clearTimerState();
-
-    // Send immediate "Spark Complete!" notification (user finished early)
-    NotificationService.sendSparkCompleteNotification();
   };
 
-  const handleFeedback = (feedback: FeedbackType, wouldRepeat: boolean) => {
+  const handleFeedback = async (feedback: FeedbackType, wouldRepeat: boolean) => {
     completeChallenge(feedback, wouldRepeat);
     incrementStreak();
     setShowFeedback(false);
 
-    // Send "Great job!" notification after feedback
-    NotificationService.sendFeedbackCompleteNotification();
+    // Update streak at risk notification with new streak
+    if (user) {
+      const newStreak = user.streak + 1; // Streak just incremented
+      await NotificationService.scheduleStreakAtRisk(newStreak);
+    }
 
     // Check for newly unlocked achievements
     // Include the just-completed challenge in the history for accurate counting
