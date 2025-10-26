@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jaimegarcia.sparks",
-      "buildNumber": "9",
+      "buildNumber": "11",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification", "fetch"],
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized notifications to you.",

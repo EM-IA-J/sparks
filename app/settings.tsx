@@ -76,20 +76,44 @@ export default function SettingsScreen() {
     };
 
     try {
-      // Update notification schedule with new time and cadence
-      await NotificationService.scheduleDailyNotificationWithTime(notificationTime, cadence);
+      // Check if we have notification permissions
+      const permissionsGranted = await NotificationService.requestPermissions();
 
-      // Update gentle nudge (4 hours after daily notification)
-      await NotificationService.scheduleGentleNudge(notificationTime, cadence);
-
-      // Update streak at risk notification based on current streak
-      if (user?.streak) {
-        await NotificationService.scheduleStreakAtRisk(user.streak);
+      if (!permissionsGranted) {
+        // User doesn't have permissions - explain
+        Alert.alert(
+          'Notifications Disabled',
+          'To receive reminders, please enable notifications in your device Settings → Sparks → Notifications.',
+          [
+            {
+              text: 'Update Without Notifications',
+              onPress: () => {
+                // Update settings without scheduling notifications
+                updateUser({
+                  areas: [selectedArea],
+                  cadence,
+                  notifWindow,
+                  notificationTime,
+                  socialOptIn,
+                });
+                Alert.alert('Saved', 'Settings updated (notifications disabled)');
+              }
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel'
+            }
+          ]
+        );
+        return;
       }
+
+      // Permissions granted - update notification schedule
+      await NotificationService.scheduleDailyNotificationWithTime(notificationTime, cadence);
 
       // Update user settings
       updateUser({
-        areas: [selectedArea], // Save as single-item array
+        areas: [selectedArea],
         cadence,
         notifWindow,
         notificationTime,

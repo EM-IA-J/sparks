@@ -82,15 +82,31 @@ export default function OnboardingScreen() {
 
     try {
       // Request notification permissions
-      await NotificationService.requestPermissions();
+      const permissionsGranted = await NotificationService.requestPermissions();
+
+      if (!permissionsGranted) {
+        // User denied permissions - explain and continue
+        Alert.alert(
+          'Notifications Disabled',
+          'To receive daily reminders, please enable notifications in your device Settings → Sparks → Notifications.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Complete onboarding even without notifications
+                completeOnboarding([selectedArea], cadence, notifWindow, socialOptIn, notificationTime);
+                router.replace('/(tabs)');
+              }
+            }
+          ]
+        );
+        return;
+      }
+
+      // Permissions granted - schedule notification
       await NotificationService.scheduleDailyNotificationWithTime(notificationTime, cadence);
 
-      // Schedule gentle nudge (4 hours after daily notification)
-      await NotificationService.scheduleGentleNudge(notificationTime, cadence);
-
-      // Note: Streak at risk notification will be scheduled once user builds a streak >= 3
-
-      // Complete onboarding (pass as single-item array for compatibility)
+      // Complete onboarding
       completeOnboarding([selectedArea], cadence, notifWindow, socialOptIn, notificationTime);
 
       // Navigate to main app

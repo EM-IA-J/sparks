@@ -41,22 +41,35 @@ export const NotificationService = {
   },
 
   /**
-   * Request notification permissions
+   * Request notification permissions with proper iOS configuration
    */
   async requestPermissions(): Promise<boolean> {
     if (Platform.OS === 'web') {
       return false; // Web doesn't support push notifications via expo-notifications
     }
 
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
 
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync({
+          ios: {
+            allowAlert: true,
+            allowBadge: true,
+            allowSound: true,
+            allowAnnouncements: false,
+          },
+        });
+        finalStatus = status;
+      }
+
+      logger.log('📱 Notification permissions:', finalStatus);
+      return finalStatus === 'granted';
+    } catch (error) {
+      logger.error('Error requesting notification permissions:', error);
+      return false;
     }
-
-    return finalStatus === 'granted';
   },
 
   /**
@@ -107,7 +120,7 @@ export const NotificationService = {
 
   /**
    * Schedule notifications at user's preferred time respecting their cadence
-   * Uses exact date calculations for reliability
+   * Uses a single repeating notification with proper repeat interval
    */
   async scheduleDailyNotificationWithTime(
     notificationTime: NotificationTime,
@@ -117,73 +130,72 @@ export const NotificationService = {
       return; // Skip for web
     }
 
-    logger.log('📅 Scheduling notifications with exact dates:', { notificationTime, cadence });
+    logger.log('📅 Scheduling daily notification:', { notificationTime, cadence });
 
-    // Clean up any past notifications first
-    await this.cleanupPastNotifications();
+    // Cancel ALL existing notifications first
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    logger.log('🗑️ Cancelled all existing notifications');
 
-    // Cancel existing daily notifications
-    const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    for (const notification of allNotifications) {
-      if (notification.content.data?.type === 'daily_spark') {
-        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
-      }
-    }
-
-    // Calculate interval based on cadence
-    const getDayInterval = (cad: Cadence): number => {
-      switch (cad) {
-        case 'daily':
-          return 1;
-        case 'every2days':
-          return 2;
-        case 'every3days':
-          return 3;
-        case 'weekly':
-          return 7;
-        default:
-          return 1;
-      }
-    };
-
-    const interval = getDayInterval(cadence);
-    const now = new Date();
-
-    // Calculate the first notification time
-    let nextDate = new Date();
-    nextDate.setHours(notificationTime.hour, notificationTime.minute, 0, 0);
-
-    // If the time has already passed today, start from tomorrow
-    if (nextDate <= now) {
-      nextDate.setDate(nextDate.getDate() + 1);
-    }
-
-    // Schedule the next 30 occurrences
-    for (let i = 0; i < 30; i++) {
-      const notificationDate = new Date(nextDate);
-      notificationDate.setDate(nextDate.getDate() + (i * interval));
-
-      const notificationId = await Notifications.scheduleNotificationAsync({
+    // For cadences other than daily, we need to schedule individual notifications
+    // because iOS doesn't support custom repeat intervals with calendar triggers
+    if (cadence === 'daily') {
+      // Use calendar trigger for daily notifications
+      await Notifications.scheduleNotificationAsync({
         content: {
           title: COPY.notifications.dailyTitle,
           body: COPY.notifications.dailyBody,
           sound: true,
-          data: { type: 'daily_spark', iteration: i },
+          data: { type: 'daily_spark' },
         },
         trigger: {
-          date: notificationDate,
+          hour: notificationTime.hour,
+          minute: notificationTime.minute,
+          repeats: true,
         },
       });
 
-      if (i < 3) { // Log first 3 for debugging
-        logger.log(`✅ Notification ${i + 1} scheduled for:`, notificationDate.toLocaleString());
-      }
-    }
+      logger.log(`✅ Daily notification scheduled for ${notificationTime.hour}:${notificationTime.minute}`);
+    } else {
+      // For non-daily cadences, schedule next 10 notifications with exact dates
+      const getDayInterval = (cad: Cadence): number => {
+        switch (cad) {
+          case 'every2days': return 2;
+          case 'every3days': return 3;
+          case 'weekly': return 7;
+          default: return 1;
+        }
+      };
 
-    // Debug: List all scheduled notifications
-    const allNotificationsAfter = await Notifications.getAllScheduledNotificationsAsync();
-    const dailySparks = allNotificationsAfter.filter(n => n.content.data?.type === 'daily_spark');
-    logger.log('📋 Total daily spark notifications scheduled:', dailySparks.length);
+      const interval = getDayInterval(cadence);
+      const now = new Date();
+      let nextDate = new Date();
+      nextDate.setHours(notificationTime.hour, notificationTime.minute, 0, 0);
+
+      // If the time has already passed today, start from tomorrow
+      if (nextDate <= now) {
+        nextDate.setDate(nextDate.getDate() + interval);
+      }
+
+      // Schedule next 10 occurrences
+      for (let i = 0; i < 10; i++) {
+        const notificationDate = new Date(nextDate);
+        notificationDate.setDate(nextDate.getDate() + (i * interval));
+
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: COPY.notifications.dailyTitle,
+            body: COPY.notifications.dailyBody,
+            sound: true,
+            data: { type: 'daily_spark' },
+          },
+          trigger: {
+            date: notificationDate,
+          },
+        });
+      }
+
+      logger.log(`✅ Scheduled 10 notifications every ${interval} days starting at ${nextDate.toLocaleString()}`);
+    }
   },
 
   /**
