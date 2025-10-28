@@ -15,9 +15,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jaimegarcia.sparks",
-      "buildNumber": "11",
+      "buildNumber": "23",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification", "fetch"],
+        "UIBackgroundModes": [
+          "remote-notification",
+          "fetch"
+        ],
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized notifications to you.",
         "NSCameraUsageDescription": "Allow Sparks to access your camera to capture photos of completed challenges.",
         "NSPhotoLibraryUsageDescription": "Allow Sparks to access your photo library to save challenge photos."
@@ -25,10 +28,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptative-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.jaimegarcia.sparks"
     },
     "web": {
       "favicon": "./assets/favicon.png"

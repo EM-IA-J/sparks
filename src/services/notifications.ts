@@ -1,11 +1,11 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { NotifWindow, NotificationTime, Cadence } from '../types';
-import { getHourForWindow, getTomorrowAtHour } from '../utils/time';
+import { getHourForWindow } from '../utils/time';
 import { COPY } from '../copy';
 import { logger } from '../utils/logger';
 
-// Configure notification behavior
+// --- GLOBAL HANDLER ---
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -14,60 +14,40 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// --- INIT CHANNEL (ANDROID) ---
+async function ensureAndroidChannel() {
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+    });
+  }
+}
+
 export const NotificationService = {
   /**
-   * Clean up past notifications (already fired)
-   * This helps keep the notification queue clean
-   */
-  async cleanupPastNotifications(): Promise<void> {
-    if (Platform.OS === 'web') {
-      return;
-    }
-
-    const now = new Date();
-    const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
-
-    for (const notification of allNotifications) {
-      if (notification.trigger && 'date' in notification.trigger) {
-        const triggerDate = new Date(notification.trigger.date);
-
-        // Cancel if notification is in the past
-        if (triggerDate < now) {
-          await Notifications.cancelScheduledNotificationAsync(notification.identifier);
-          logger.log('🗑️ Cleaned up past notification:', notification.identifier);
-        }
-      }
-    }
-  },
-
-  /**
-   * Request notification permissions with proper iOS configuration
+   * Request permissions (iOS)
    */
   async requestPermissions(): Promise<boolean> {
-    if (Platform.OS === 'web') {
-      return false; // Web doesn't support push notifications via expo-notifications
-    }
+    if (Platform.OS === 'web') return false;
 
     try {
+      await ensureAndroidChannel();
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync({
-          ios: {
-            allowAlert: true,
-            allowBadge: true,
-            allowSound: true,
-            allowAnnouncements: false,
-          },
+          ios: { allowAlert: true, allowBadge: true, allowSound: true },
         });
         finalStatus = status;
       }
 
       logger.log('📱 Notification permissions:', finalStatus);
       return finalStatus === 'granted';
-    } catch (error) {
-      logger.error('Error requesting notification permissions:', error);
+    } catch (err) {
+      logger.error('Error requesting notification permissions:', err);
       return false;
     }
   },
@@ -92,54 +72,51 @@ export const NotificationService = {
   },
 
   /**
-   * Schedule daily notification at user's preferred time
+   * Schedule a daily reminder at chosen window/hour
    */
-  async scheduleDailyNotification(window: NotifWindow): Promise<void> {
-    if (Platform.OS === 'web') {
-      return; // Skip for web
-    }
+  async scheduleDaily(window: NotifWindow): Promise<void> {
+    if (Platform.OS === 'web') return;
 
-    // Cancel existing notifications
-    await Notifications.cancelAllScheduledNotificationsAsync();
-
+    await ensureAndroidChannel();
     const hour = getHourForWindow(window);
-    const tomorrow = getTomorrowAtHour(hour);
+
+    // Cancel previous daily notifications
+    await this.cancelByType('daily_spark');
 
     await Notifications.scheduleNotificationAsync({
       content: {
         title: COPY.notifications.dailyTitle,
         body: COPY.notifications.dailyBody,
         sound: true,
+        data: { type: 'daily_spark' },
       },
       trigger: {
-        date: tomorrow,
-        repeats: true,
+        hour,
+        minute: 0,
+        repeats: true, // ✅ correct recurrent trigger for iOS
       },
     });
+
+    logger.log(`✅ Scheduled daily reminder at ${hour}:00`);
   },
 
   /**
-   * Schedule notifications at user's preferred time respecting their cadence
-   * Uses a single repeating notification with proper repeat interval
+   * Schedule notification - SIMPLE APPROACH
+   * Uses the recommended Expo DAILY trigger type for daily cadence
+   * For other cadences, uses Date trigger (single notification)
    */
   async scheduleDailyNotificationWithTime(
     notificationTime: NotificationTime,
     cadence: Cadence = 'daily'
   ): Promise<void> {
-    if (Platform.OS === 'web') {
-      return; // Skip for web
-    }
+    if (Platform.OS === 'web') return;
+    await ensureAndroidChannel();
 
-    logger.log('📅 Scheduling daily notification:', { notificationTime, cadence });
+    await this.cancelByType('daily_spark');
+    logger.log(`📅 Scheduling ${cadence} notification at ${notificationTime.hour}:${notificationTime.minute}`);
 
-    // Cancel ALL existing notifications first
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    logger.log('🗑️ Cancelled all existing notifications');
-
-    // For cadences other than daily, we need to schedule individual notifications
-    // because iOS doesn't support custom repeat intervals with calendar triggers
     if (cadence === 'daily') {
-      // Use calendar trigger for daily notifications
+      // For daily: Use the DAILY trigger type (recommended by Expo docs)
       await Notifications.scheduleNotificationAsync({
         content: {
           title: COPY.notifications.dailyTitle,
@@ -148,214 +125,131 @@ export const NotificationService = {
           data: { type: 'daily_spark' },
         },
         trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
           hour: notificationTime.hour,
           minute: notificationTime.minute,
-          repeats: true,
         },
       });
 
-      logger.log(`✅ Daily notification scheduled for ${notificationTime.hour}:${notificationTime.minute}`);
-    } else {
-      // For non-daily cadences, schedule next 10 notifications with exact dates
-      const getDayInterval = (cad: Cadence): number => {
-        switch (cad) {
-          case 'every2days': return 2;
-          case 'every3days': return 3;
-          case 'weekly': return 7;
-          default: return 1;
-        }
-      };
-
-      const interval = getDayInterval(cadence);
-      const now = new Date();
-      let nextDate = new Date();
-      nextDate.setHours(notificationTime.hour, notificationTime.minute, 0, 0);
-
-      // If the time has already passed today, start from tomorrow
-      if (nextDate <= now) {
-        nextDate.setDate(nextDate.getDate() + interval);
-      }
-
-      // Schedule next 10 occurrences
-      for (let i = 0; i < 10; i++) {
-        const notificationDate = new Date(nextDate);
-        notificationDate.setDate(nextDate.getDate() + (i * interval));
-
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: COPY.notifications.dailyTitle,
-            body: COPY.notifications.dailyBody,
-            sound: true,
-            data: { type: 'daily_spark' },
-          },
-          trigger: {
-            date: notificationDate,
-          },
-        });
-      }
-
-      logger.log(`✅ Scheduled 10 notifications every ${interval} days starting at ${nextDate.toLocaleString()}`);
-    }
-  },
-
-  /**
-   * Schedule gentle nudge notification (4 hours after daily notification)
-   * Only if user hasn't started their spark
-   * Uses exact dates for reliability and respects user's cadence
-   */
-  async scheduleGentleNudge(notificationTime: NotificationTime, cadence: Cadence = 'daily'): Promise<void> {
-    if (Platform.OS === 'web') {
+      logger.log(`✅ Scheduled DAILY notification at ${notificationTime.hour}:${String(notificationTime.minute).padStart(2, '0')}`);
       return;
     }
 
-    // Cancel any existing gentle nudge
-    await this.cancelGentleNudge();
-
+    // For other cadences: Schedule next occurrence with Date trigger
+    const intervalDays = cadence === 'every2days' ? 2 : cadence === 'every3days' ? 3 : 7;
     const now = new Date();
-
-    // Calculate interval based on cadence
-    const getDayInterval = (cad: Cadence): number => {
-      switch (cad) {
-        case 'daily':
-          return 1;
-        case 'every2days':
-          return 2;
-        case 'every3days':
-          return 3;
-        case 'weekly':
-          return 7;
-        default:
-          return 1;
-      }
-    };
-
-    const interval = getDayInterval(cadence);
-
-    // Calculate the first nudge time (4 hours after daily notification)
-    let nextDate = new Date();
+    const nextDate = new Date();
     nextDate.setHours(notificationTime.hour, notificationTime.minute, 0, 0);
-    nextDate.setHours(nextDate.getHours() + 4); // Add 4 hours
 
-    // If the time has already passed today, start from tomorrow
+    // If time has passed today, add interval days
     if (nextDate <= now) {
-      nextDate.setDate(nextDate.getDate() + interval);
+      nextDate.setDate(nextDate.getDate() + intervalDays);
     }
 
-    // Schedule the next 30 gentle nudges respecting cadence
-    for (let i = 0; i < 30; i++) {
-      const notificationDate = new Date(nextDate);
-      notificationDate.setDate(nextDate.getDate() + (i * interval));
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: COPY.notifications.dailyTitle,
+        body: COPY.notifications.dailyBody,
+        sound: true,
+        data: { type: 'daily_spark', cadence },
+      },
+      trigger: {
+        date: nextDate,
+      },
+    });
 
-      const notificationId = await Notifications.scheduleNotificationAsync({
+    logger.log(`✅ Scheduled ${cadence} notification for ${nextDate.toLocaleString()}`);
+  },
+
+  /**
+   * Schedule gentle nudge (4h after daily)
+   */
+  async scheduleGentleNudge(notificationTime: NotificationTime, cadence: Cadence = 'daily'): Promise<void> {
+    if (Platform.OS === 'web') return;
+    await ensureAndroidChannel();
+
+    await this.cancelByType('gentle_nudge');
+    const intervalMap = { daily: 1, every2days: 2, every3days: 3, weekly: 7 };
+    const interval = intervalMap[cadence] ?? 1;
+
+    const now = new Date();
+    let next = new Date();
+    next.setHours(notificationTime.hour + 4, notificationTime.minute, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + interval);
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(next);
+      d.setDate(next.getDate() + i * interval);
+
+      await Notifications.scheduleNotificationAsync({
         content: {
           title: COPY.notifications.gentleNudgeTitle,
           body: COPY.notifications.gentleNudgeBody,
           sound: true,
-          data: { type: 'gentle_nudge', iteration: i },
+          data: { type: 'gentle_nudge', iteration: i + 1 },
         },
-        trigger: {
-          date: notificationDate,
-        },
+        trigger: { date: d },
       });
 
-      if (i < 3) { // Log first 3 for debugging
-        logger.log(`✅ Gentle nudge ${i + 1} scheduled for:`, notificationDate.toLocaleString());
-      }
+      if (i < 3) logger.log(`✅ Gentle nudge ${i + 1} for ${d.toLocaleString()}`);
     }
-
-    const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    const nudges = allNotifications.filter(n => n.content.data?.type === 'gentle_nudge');
-    logger.log('📋 Total gentle nudges scheduled:', nudges.length);
   },
 
   /**
    * Cancel gentle nudge (called when user starts their spark)
    */
   async cancelGentleNudge(): Promise<void> {
-    if (Platform.OS === 'web') {
-      return;
-    }
-
-    // Get all scheduled notifications and cancel those with type 'gentle_nudge'
-    const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    for (const notification of allNotifications) {
-      if (notification.content.data?.type === 'gentle_nudge') {
-        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
-        logger.log('🗑️ Cancelled gentle nudge:', notification.identifier);
-      }
-    }
+    await this.cancelByType('gentle_nudge');
   },
 
   /**
-   * Schedule streak at risk notification (9pm daily)
-   * Only if user has streak >= 3 days
-   * Uses exact dates for reliability
+   * Schedule streak-at-risk (21:00 daily if streak >=3)
    */
   async scheduleStreakAtRisk(streak: number): Promise<void> {
-    if (Platform.OS === 'web') {
-      return;
-    }
-
-    // Cancel any existing streak at risk notification
-    await this.cancelStreakAtRisk();
-
-    // Only schedule if streak is 3 or more days
+    if (Platform.OS === 'web') return;
     if (streak < 3) {
-      logger.log('⏭️ Skipping streak at risk notification (streak < 3)');
+      logger.log('⏭️ Skipping streak at risk (streak < 3)');
       return;
     }
 
-    const now = new Date();
+    await ensureAndroidChannel();
+    await this.cancelByType('streak_at_risk');
 
-    // Calculate the first notification time (9:00 PM)
-    let nextDate = new Date();
-    nextDate.setHours(21, 0, 0, 0); // 9:00 PM
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: COPY.notifications.streakAtRiskTitle,
+        body: COPY.notifications.streakAtRiskBody,
+        sound: true,
+        data: { type: 'streak_at_risk', streak },
+      },
+      trigger: {
+        hour: 21,
+        minute: 0,
+        repeats: true,
+      },
+    });
 
-    // If 9pm has already passed today, start from tomorrow
-    if (nextDate <= now) {
-      nextDate.setDate(nextDate.getDate() + 1);
-    }
-
-    // Schedule the next 30 streak at risk notifications (one per day)
-    for (let i = 0; i < 30; i++) {
-      const notificationDate = new Date(nextDate);
-      notificationDate.setDate(nextDate.getDate() + i);
-
-      const notificationId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: COPY.notifications.streakAtRiskTitle,
-          body: COPY.notifications.streakAtRiskBody,
-          sound: true,
-          data: { type: 'streak_at_risk', streak, iteration: i },
-        },
-        trigger: {
-          date: notificationDate,
-        },
-      });
-
-      if (i < 3) { // Log first 3 for debugging
-        logger.log(`✅ Streak at risk ${i + 1} scheduled for:`, notificationDate.toLocaleString());
-      }
-    }
-
-    const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    const streakNotifs = allNotifications.filter(n => n.content.data?.type === 'streak_at_risk');
-    logger.log(`📋 Total streak at risk notifications scheduled: ${streakNotifs.length} (${streak}-day streak)`);
+    logger.log('✅ Scheduled streak-at-risk notification daily at 21:00');
   },
 
   /**
    * Cancel streak at risk notification
    */
   async cancelStreakAtRisk(): Promise<void> {
-    if (Platform.OS === 'web') {
-      return;
-    }
+    await this.cancelByType('streak_at_risk');
+  },
 
-    const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    for (const notification of allNotifications) {
-      if (notification.content.data?.type === 'streak_at_risk') {
-        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
-        logger.log('🗑️ Cancelled streak at risk:', notification.identifier);
+  /**
+   * Cancel notifications selectively by data.type
+   */
+  async cancelByType(type: string): Promise<void> {
+    if (Platform.OS === 'web') return;
+
+    const all = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of all) {
+      if (n.content.data?.type === type) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+        logger.log(`🗑️ Cancelled ${type}: ${n.identifier}`);
       }
     }
   },
@@ -378,5 +272,17 @@ export const NotificationService = {
       return [];
     }
     return await Notifications.getAllScheduledNotificationsAsync();
+  },
+
+  /**
+   * Debug: list all scheduled notifications
+   */
+  async listAll(): Promise<void> {
+    if (Platform.OS === 'web') return;
+    const all = await Notifications.getAllScheduledNotificationsAsync();
+    logger.log('📋 Currently scheduled notifications:', all.length);
+    all.forEach((n, i) =>
+      logger.log(`${i + 1}. ${n.content.title} [${n.content.data?.type}]`)
+    );
   },
 };
