@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, Alert, Share, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useUserStore } from '../src/store/useUserStore';
@@ -179,8 +180,9 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{COPY.settings.title}</Text>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>{COPY.settings.title}</Text>
 
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>{COPY.settings.areas}</Text>
@@ -263,11 +265,16 @@ export default function SettingsScreen() {
           size="md"
         />
       </Card>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.bg,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.bg,
@@ -280,7 +287,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xxxl,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
-    marginTop: theme.spacing.xl,
+    marginTop: theme.spacing.md,
     marginBottom: theme.spacing.lg,
   },
   section: {

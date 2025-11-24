@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, Alert, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -9,6 +10,9 @@ import { Button, Chip, Card } from '../src/components';
 import { theme } from '../src/theme';
 import { COPY } from '../src/copy';
 import { NotificationService } from '../src/services/notifications';
+
+// Onboarding step: 0 = welcome, 1 = main setup
+type OnboardingStep = 0 | 1;
 
 const AREA_OPTIONS: { value: Area; label: string }[] = [
   { value: 'health', label: 'Health' },
@@ -45,7 +49,10 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const completeOnboarding = useUserStore((state) => state.completeOnboarding);
 
-  const [selectedArea, setSelectedArea] = useState<Area | null>(null);
+  // Step management: 0 = welcome screen, 1 = main setup
+  const [step, setStep] = useState<OnboardingStep>(0);
+
+  const [selectedAreas, setSelectedAreas] = useState<Area[]>([]);
   const [cadence, setCadence] = useState<Cadence>('daily');
   const [notifWindow, setNotifWindow] = useState<NotifWindow>('8am');
 
@@ -55,8 +62,25 @@ export default function OnboardingScreen() {
   const [selectedTime, setSelectedTime] = useState<Date>(initialDate);
   const [socialOptIn, setSocialOptIn] = useState(false);
 
+  // Toggle area selection (1-2 areas allowed)
   const toggleArea = (area: Area) => {
-    setSelectedArea(area);
+    setSelectedAreas((prev) => {
+      if (prev.includes(area)) {
+        // Remove if already selected
+        return prev.filter((a) => a !== area);
+      } else if (prev.length < 2) {
+        // Add if less than 2 selected
+        return [...prev, area];
+      } else {
+        // Replace oldest selection if already 2 selected
+        return [prev[1], area];
+      }
+    });
+  };
+
+  const handleWelcomeContinue = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setStep(1);
   };
 
   const handleTimeChange = (event: any, date?: Date) => {
@@ -66,8 +90,8 @@ export default function OnboardingScreen() {
   };
 
   const handleComplete = async () => {
-    if (!selectedArea) {
-      Alert.alert('Hold up!', 'Please select one area to focus on');
+    if (selectedAreas.length === 0) {
+      Alert.alert('Hold up!', 'Please select at least one area to focus on');
       return;
     }
 
@@ -88,13 +112,13 @@ export default function OnboardingScreen() {
         // User denied permissions - explain and continue
         Alert.alert(
           'Notifications Disabled',
-          'To receive daily reminders, please enable notifications in your device Settings → Sparks → Notifications.',
+          'To receive daily reminders, please enable notifications in your device Settings → Challenge me → Notifications.',
           [
             {
               text: 'OK',
               onPress: () => {
                 // Complete onboarding even without notifications
-                completeOnboarding([selectedArea], cadence, notifWindow, socialOptIn, notificationTime);
+                completeOnboarding(selectedAreas, cadence, notifWindow, socialOptIn, notificationTime);
                 router.replace('/(tabs)');
               }
             }
@@ -107,7 +131,7 @@ export default function OnboardingScreen() {
       await NotificationService.scheduleDailyNotificationWithTime(notificationTime, cadence);
 
       // Complete onboarding
-      completeOnboarding([selectedArea], cadence, notifWindow, socialOptIn, notificationTime);
+      completeOnboarding(selectedAreas, cadence, notifWindow, socialOptIn, notificationTime);
 
       // Navigate to main app
       router.replace('/(tabs)');
@@ -121,7 +145,7 @@ export default function OnboardingScreen() {
             text: 'OK',
             onPress: () => {
               // Still complete onboarding even if notifications fail
-              completeOnboarding([selectedArea], cadence, notifWindow, socialOptIn, notificationTime);
+              completeOnboarding(selectedAreas, cadence, notifWindow, socialOptIn, notificationTime);
               router.replace('/(tabs)');
             }
           }
@@ -130,7 +154,31 @@ export default function OnboardingScreen() {
     }
   };
 
+  // Welcome screen (step 0)
+  if (step === 0) {
+    return (
+      <SafeAreaView style={styles.welcomeContainer} edges={['top', 'bottom']}>
+        <View style={styles.welcomeContent}>
+          <Text style={styles.welcomeTitle}>Welcome to Sparks</Text>
+          <View style={styles.welcomeSpacing} />
+          <Text style={styles.welcomeSubtitle}>
+            The place where you need to act,{'\n'}not to think.
+          </Text>
+        </View>
+        <View style={styles.welcomeButtonContainer}>
+          <Button
+            title="Continue"
+            onPress={handleWelcomeContinue}
+            size="lg"
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Main setup screen (step 1)
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.title}>{COPY.onboarding.welcome}</Text>
@@ -139,18 +187,23 @@ export default function OnboardingScreen() {
 
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>{COPY.onboarding.pickAreas}</Text>
-        <Text style={styles.helper}>Pick one area to focus on</Text>
+        <Text style={styles.helper}>Pick 1 or 2 areas to focus on</Text>
         <View style={styles.chipContainer}>
           {AREA_OPTIONS.map((option) => (
             <Chip
               key={option.value}
               label={option.label}
-              selected={selectedArea === option.value}
+              selected={selectedAreas.includes(option.value)}
               onPress={() => toggleArea(option.value)}
               area={option.value}
             />
           ))}
         </View>
+        {selectedAreas.length > 0 && (
+          <Text style={styles.counter}>
+            {selectedAreas.length}/2 selected
+          </Text>
+        )}
       </Card>
 
       <Card style={styles.section}>
@@ -201,10 +254,48 @@ export default function OnboardingScreen() {
         style={styles.ctaButton}
       />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  // Safe area style for main setup screen
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.bg,
+  },
+  // Welcome screen styles
+  welcomeContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.primary,
+  },
+  welcomeContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xl,
+  },
+  welcomeTitle: {
+    fontSize: 48,
+    fontWeight: theme.fontWeight.bold,
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  welcomeSpacing: {
+    height: theme.spacing.xl,
+  },
+  welcomeSubtitle: {
+    fontSize: theme.fontSize.xl,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    lineHeight: 30,
+  },
+  welcomeButtonContainer: {
+    paddingHorizontal: theme.spacing.xl,
+    paddingBottom: theme.spacing.xl,
+  },
+
+  // Main setup screen styles
   container: {
     flex: 1,
     backgroundColor: theme.colors.bg,

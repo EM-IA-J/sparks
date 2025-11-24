@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { Button } from './Button';
@@ -7,12 +8,17 @@ import { theme } from '../theme';
 
 interface BreathingExerciseProps {
   onComplete: (feeling?: string) => void;
+  onBack: () => void; // New: go back to previous screen
+  onSkip: () => void; // New: skip breathing and go to challenge
   isFirstTime: boolean;
 }
 
 type Phase = 'inhale' | 'hold' | 'exhale';
 
-export const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onComplete, isFirstTime }) => {
+// Waiting state delay in seconds
+const WAIT_DELAY_SECONDS = 120; // 2 minutes
+
+export const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onComplete, onBack, onSkip, isFirstTime }) => {
   const [showOptions, setShowOptions] = useState(true);
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>('inhale');
@@ -20,6 +26,10 @@ export const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onComplete
   const [totalElapsed, setTotalElapsed] = useState(0);
   const [scaleAnim] = useState(new Animated.Value(0.8));
   const [showFeeling, setShowFeeling] = useState(false);
+  const [showReadyQuestion, setShowReadyQuestion] = useState(false);
+  const [showWaiting, setShowWaiting] = useState(false);
+  const [waitingSeconds, setWaitingSeconds] = useState(WAIT_DELAY_SECONDS);
+  const waitingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const title = isFirstTime
     ? "I invite you to do a short breathing exercise to get grounded and present."
@@ -128,13 +138,107 @@ export const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onComplete
   }, [phase, showOptions, showFeeling]);
 
   const handleFeelingSelect = (feeling: string) => {
-    onComplete(feeling);
+    // After feeling selection, show the ready question
+    setShowFeeling(false);
+    setShowReadyQuestion(true);
   };
+
+  const handleReadyYes = () => {
+    // User is ready - proceed to challenge
+    onComplete();
+  };
+
+  const handleGiveMeMinutes = () => {
+    // Show waiting state
+    setShowReadyQuestion(false);
+    setShowWaiting(true);
+    setWaitingSeconds(WAIT_DELAY_SECONDS);
+
+    // Start countdown
+    waitingIntervalRef.current = setInterval(() => {
+      setWaitingSeconds((prev) => {
+        if (prev <= 1) {
+          // Time's up - proceed to challenge
+          if (waitingIntervalRef.current) {
+            clearInterval(waitingIntervalRef.current);
+          }
+          onComplete();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleReadyNow = () => {
+    // User is ready early - clear timer and proceed
+    if (waitingIntervalRef.current) {
+      clearInterval(waitingIntervalRef.current);
+    }
+    onComplete();
+  };
+
+  // Cleanup waiting timer on unmount
+  useEffect(() => {
+    return () => {
+      if (waitingIntervalRef.current) {
+        clearInterval(waitingIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Show waiting state
+  if (showWaiting) {
+    const minutes = Math.floor(waitingSeconds / 60);
+    const seconds = waitingSeconds % 60;
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <Text style={styles.title}>Take your time</Text>
+        <Text style={styles.description}>
+          I will show you the challenge in a moment.{'\n'}
+          Relax and breathe.
+        </Text>
+        <Text style={styles.waitingTimer}>
+          {minutes}:{seconds.toString().padStart(2, '0')}
+        </Text>
+        <Button
+          title="I'm ready now"
+          onPress={handleReadyNow}
+          size="lg"
+          style={styles.readyBtn}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  // Show ready question after breathing
+  if (showReadyQuestion) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <Text style={styles.title}>Ready for today's challenge?</Text>
+        <View style={styles.readyButtonsContainer}>
+          <Button
+            title="Yes"
+            onPress={handleReadyYes}
+            size="lg"
+            style={styles.readyBtn}
+          />
+          <Button
+            title="Give me a few minutes"
+            onPress={handleGiveMeMinutes}
+            variant="outline"
+            size="lg"
+            style={styles.readyBtn}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // Show feeling selection after breathing
   if (showFeeling) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <Text style={styles.title}>How do you feel?</Text>
         <View style={styles.feelingRow}>
           <Button title="💩" onPress={() => handleFeelingSelect('bad')} size="lg" style={styles.feelingBtn} />
@@ -142,41 +246,50 @@ export const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onComplete
           <Button title="🙂" onPress={() => handleFeelingSelect('good')} size="lg" style={styles.feelingBtn} />
           <Button title="🔥" onPress={() => handleFeelingSelect('fire')} size="lg" style={styles.feelingBtn} />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   // Show duration options
   if (showOptions) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
-        <Text style={styles.durationLabel}>Choose how many minutes you want the exercise to last:</Text>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <View style={styles.scrollContent}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
+          <Text style={styles.durationLabel}>Choose how many minutes you want the exercise to last:</Text>
 
-        <View style={styles.durationGrid}>
-          <Button title="1 MIN" onPress={() => handleDurationSelect(1)} size="md" style={styles.durationBtn} />
-          <Button title="2 MIN" onPress={() => handleDurationSelect(2)} size="md" style={styles.durationBtn} />
-          <Button title="3 MIN" onPress={() => handleDurationSelect(3)} size="md" style={styles.durationBtn} />
-          <Button title="4 MIN" onPress={() => handleDurationSelect(4)} size="md" style={styles.durationBtn} />
-          <Button title="5 MIN" onPress={() => handleDurationSelect(5)} size="md" style={styles.durationBtn} />
+          <View style={styles.durationGrid}>
+            <Button title="1 MIN" onPress={() => handleDurationSelect(1)} size="md" style={styles.durationBtn} />
+            <Button title="2 MIN" onPress={() => handleDurationSelect(2)} size="md" style={styles.durationBtn} />
+            <Button title="3 MIN" onPress={() => handleDurationSelect(3)} size="md" style={styles.durationBtn} />
+            <Button title="4 MIN" onPress={() => handleDurationSelect(4)} size="md" style={styles.durationBtn} />
+            <Button title="5 MIN" onPress={() => handleDurationSelect(5)} size="md" style={styles.durationBtn} />
+          </View>
+
+          <Button
+            title="SKIP THIS TIME"
+            onPress={onSkip}
+            variant="outline"
+            size="md"
+            style={styles.skipBtn}
+          />
+          <Button
+            title="DO NOT SHOW THIS SUGGESTION AGAIN"
+            onPress={handleNeverShow}
+            variant="outline"
+            size="sm"
+            style={styles.neverBtn}
+          />
+          <Button
+            title="BACK"
+            onPress={onBack}
+            variant="outline"
+            size="sm"
+            style={styles.backBtn}
+          />
         </View>
-
-        <Button
-          title="SKIP THIS TIME"
-          onPress={handleSkip}
-          variant="outline"
-          size="md"
-          style={styles.skipBtn}
-        />
-        <Button
-          title="DO NOT SHOW THIS SUGGESTION AGAIN"
-          onPress={handleNeverShow}
-          variant="outline"
-          size="sm"
-          style={styles.neverBtn}
-        />
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -188,7 +301,7 @@ export const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onComplete
   const progressPercent = ((totalElapsed / (selectedDuration! * 60)) * 100).toFixed(0);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <Text style={styles.subtitle}>
         {Math.floor(totalElapsed / 60)}:{(totalElapsed % 60).toString().padStart(2, '0')} / {selectedDuration}:00
       </Text>
@@ -209,7 +322,25 @@ export const BreathingExercise: React.FC<BreathingExerciseProps> = ({ onComplete
       <Text style={styles.phase}>{phaseText}</Text>
       <Text style={styles.timer}>{remainingSeconds}</Text>
       <Text style={styles.instruction}>Focus on counting</Text>
-    </View>
+
+      {/* Back and Skip buttons during active breathing */}
+      <View style={styles.activeControlsRow}>
+        <Button
+          title="Back"
+          onPress={onBack}
+          variant="outline"
+          size="sm"
+          style={styles.activeControlBtn}
+        />
+        <Button
+          title="Skip"
+          onPress={onSkip}
+          variant="outline"
+          size="sm"
+          style={styles.activeControlBtn}
+        />
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -219,8 +350,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.xxl,
+    paddingVertical: theme.spacing.lg,
     backgroundColor: theme.colors.bg,
+  },
+  scrollContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: theme.spacing.lg,
   },
   title: {
     fontSize: theme.fontSize.xxl,
@@ -327,5 +464,33 @@ const styles = StyleSheet.create({
   feelingBtn: {
     flex: 1,
     paddingHorizontal: theme.spacing.xs,
+  },
+  // New styles for back button, ready question, and waiting state
+  backBtn: {
+    marginTop: theme.spacing.md,
+  },
+  readyButtonsContainer: {
+    width: '100%',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.xxl,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  readyBtn: {
+    minWidth: 200,
+  },
+  waitingTimer: {
+    fontSize: 72,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.primary,
+    marginVertical: theme.spacing.xxl,
+    textAlign: 'center',
+  },
+  activeControlsRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.xl,
+  },
+  activeControlBtn: {
+    minWidth: 100,
   },
 });

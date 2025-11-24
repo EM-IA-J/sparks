@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Share } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useSettingsStore } from '../../src/store/useSettingsStore';
 import { useUserStore } from '../../src/store/useUserStore';
@@ -74,8 +75,9 @@ export default function SocialScreen() {
   });
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{COPY.social.title}</Text>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>{COPY.social.title}</Text>
 
       {user && (
         <Card style={styles.userCard}>
@@ -139,11 +141,16 @@ export default function SocialScreen() {
           progress={achievement.progress}
         />
       ))}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.bg,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.bg,
@@ -156,7 +163,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xxxl,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
-    marginTop: theme.spacing.xl,
+    marginTop: theme.spacing.md,
     marginBottom: theme.spacing.lg,
   },
   sectionTitle: {

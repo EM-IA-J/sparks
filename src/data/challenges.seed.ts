@@ -1,7 +1,21 @@
 import { ChallengeTemplate } from '../types';
+import { CLIENT_CHALLENGE_SEEDS, CHALLENGE_COUNTS } from './client-challenges.seed';
 
-// 30+ creative challenges across 8 areas with A/B tone pairing
-export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
+// Re-export challenge counts for easy access
+export { CHALLENGE_COUNTS };
+
+/**
+ * CHALLENGE SEEDS
+ *
+ * The main challenge pool combines:
+ * 1. CLIENT_CHALLENGE_SEEDS (50 challenges) - Client-written, real-world activities
+ * 2. ORIGINAL_CHALLENGE_SEEDS (35 challenges) - Original app challenges as backup/alternatives
+ *
+ * The client challenges are the primary pool and appear first.
+ */
+
+// Original challenges (kept as backup/alternative pool)
+const ORIGINAL_CHALLENGE_SEEDS: ChallengeTemplate[] = [
   // HEALTH
   {
     id: 'h001',
@@ -12,6 +26,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Start with warm water', 'Turn to cold for final 60 seconds', 'Breathe deeply through it'],
     altId: 'h002',
+    followUp: [], // TODO: Add follow-up questions from original document
   },
   {
     id: 'h002',
@@ -22,6 +37,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Pick an upbeat song', 'Turn water to ice mode', 'Dance and sing through it'],
     altId: 'h001',
+    followUp: [],
   },
   {
     id: 'h003',
@@ -32,6 +48,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Find a quiet spot', 'Set timer for 10 minutes', 'Focus on your breath', 'Notice thoughts without judgment'],
     altId: 'h004',
+    followUp: [],
   },
   {
     id: 'h004',
@@ -42,6 +59,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Lie down somewhere comfy', 'Close your eyes', 'Each thought is a cloud passing by', 'Wave goodbye to worries'],
     altId: 'h003',
+    followUp: [],
   },
   {
     id: 'h005',
@@ -52,6 +70,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 45,
     steps: ['Put phone in another room', 'Set a timer on a clock', 'Do something analog'],
     altId: 'h006',
+    followUp: [],
   },
   {
     id: 'h006',
@@ -62,6 +81,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 45,
     steps: ['Find a drawer', 'Kiss your phone goodbye', 'Enjoy the freedom'],
     altId: 'h005',
+    followUp: [],
   },
 
   // CREATIVITY
@@ -74,6 +94,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 2,
     steps: ['Grab paper and pen', 'Pick an object nearby', 'Draw without lifting pen'],
     altId: 'c002',
+    followUp: [],
   },
   {
     id: 'c002',
@@ -84,6 +105,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 2,
     steps: ['Get weird with it', 'No rules, just vibes', 'Bonus: name your monster'],
     altId: 'c001',
+    followUp: [],
   },
   {
     id: 'c003',
@@ -94,6 +116,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['5 syllables, then 7, then 5', 'Capture one moment', 'Read it aloud'],
     altId: 'c004',
+    followUp: [],
   },
   {
     id: 'c004',
@@ -104,6 +127,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Make it rhyme if possible', 'Extra points for drama', 'Share with someone'],
     altId: 'c003',
+    followUp: [],
   },
   {
     id: 'c005',
@@ -114,6 +138,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 30,
     steps: ['Pick a new recipe or improvise', 'Use at least one unfamiliar ingredient', 'Taste and adjust as you go'],
     altId: 'c006',
+    followUp: [],
   },
   {
     id: 'c006',
@@ -124,6 +149,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 20,
     steps: ['Close your eyes, grab 3 things from pantry', 'Create something edible', 'Name your creation'],
     altId: 'c005',
+    followUp: [],
   },
 
   // SOCIAL
@@ -136,6 +162,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Pick someone you have not talked to recently', 'Ask what has been on their mind', 'Really listen'],
     altId: 's002',
+    followUp: [],
   },
   {
     id: 's002',
@@ -146,6 +173,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Scroll contacts with eyes closed', 'Call whoever you land on', 'No agenda, just vibes'],
     altId: 's001',
+    followUp: [],
   },
   {
     id: 's003',
@@ -156,6 +184,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Make eye contact', 'Ask genuinely', 'Listen to their answer'],
     altId: 's004',
+    followUp: [],
   },
   {
     id: 's004',
@@ -166,6 +195,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Commit to the bit', 'Make someone smile', 'Tip well'],
     altId: 's003',
+    followUp: [],
   },
   {
     id: 's005',
@@ -176,6 +206,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Think of someone specific', 'Tell them exactly what you appreciate', 'Be specific and heartfelt'],
     altId: 's006',
+    followUp: [],
   },
   {
     id: 's006',
@@ -186,6 +217,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Pick your victim', 'Send 3 fire emojis minimum', 'Make it embarrassingly nice'],
     altId: 's005',
+    followUp: [],
   },
 
   // NATURE
@@ -198,6 +230,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 15,
     steps: ['Leave phone in pocket', 'Notice 5 things you hear', 'Feel your feet on the ground'],
     altId: 'n002',
+    followUp: [],
   },
   {
     id: 'n002',
@@ -208,6 +241,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Find some grass', 'Free those feet', 'Feel alive'],
     altId: 'n001',
+    followUp: [],
   },
   {
     id: 'n003',
@@ -218,6 +252,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Find your tree soulmate', 'Place your hand on it', 'Name it something memorable', 'Remember where it is'],
     altId: 'n004',
+    followUp: [],
   },
   {
     id: 'n004',
@@ -228,6 +263,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Find a tree to sit under', 'Close your eyes', 'Listen to the rustling leaves'],
     altId: 'n003',
+    followUp: [],
   },
 
   // FOCUS
@@ -240,6 +276,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Choose your biggest time drain', 'Use Screen Time or similar to block it', 'Notice how you feel'],
     altId: 'f002',
+    followUp: [],
   },
   {
     id: 'f002',
@@ -250,6 +287,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['You know which one it is', 'Delete it you can reinstall tomorrow', 'Survive'],
     altId: 'f001',
+    followUp: [],
   },
   {
     id: 'f003',
@@ -260,6 +298,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 20,
     steps: ['Pick a book or article', 'Put phone away', 'No music, just reading', 'Notice when your mind wanders'],
     altId: 'f004',
+    followUp: [],
   },
   {
     id: 'f004',
@@ -270,6 +309,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 20,
     steps: ['Fiction, comics, anything goes', 'Get cozy', 'Let yourself escape'],
     altId: 'f003',
+    followUp: [],
   },
 
   // MONEY
@@ -282,6 +322,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 15,
     steps: ['Check bank statement', 'Find recurring charges', 'Cancel at least one you forgot about'],
     altId: 'm002',
+    followUp: [],
   },
   {
     id: 'm002',
@@ -292,6 +333,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 15,
     steps: ['Hunt down the vampire draining your account', 'Press that cancel button', 'Feel rich'],
     altId: 'm001',
+    followUp: [],
   },
   {
     id: 'm003',
@@ -302,6 +344,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 2,
     steps: ['Open banking app', 'Move $1 or local equivalent', 'Feel the momentum'],
     altId: 'm004',
+    followUp: [],
   },
   {
     id: 'm004',
@@ -312,6 +355,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 2,
     steps: ['Transfer $1 to savings', 'Imagine future-you high-fiving you', 'You are welcome'],
     altId: 'm003',
+    followUp: [],
   },
 
   // ROMANCE
@@ -324,6 +368,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 15,
     steps: ['Update photos or bio', 'Show your authentic self', 'Remove anything that feels forced'],
     altId: 'r002',
+    followUp: [],
   },
   {
     id: 'r002',
@@ -334,6 +379,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 15,
     steps: ['Add a random fun fact', 'Use a photo where you are laughing', 'Be weird, be you'],
     altId: 'r001',
+    followUp: [],
   },
   {
     id: 'r003',
@@ -344,6 +390,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Make eye contact', 'Smile genuinely', 'No expectations, just practice connection'],
     altId: 'r004',
+    followUp: [],
   },
   {
     id: 'r004',
@@ -354,6 +401,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Count to 3', 'Spread the joy', 'Bonus: see if they smile back'],
     altId: 'r003',
+    followUp: [],
   },
 
   // SELFLOVE
@@ -366,6 +414,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Pick 5 items in your space', 'Find proper homes for them', 'Notice how you feel after'],
     altId: 'sl002',
+    followUp: [],
   },
   {
     id: 'sl002',
@@ -376,6 +425,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Set a timer', 'Go fast', 'Do not think, just organize'],
     altId: 'sl001',
+    followUp: [],
   },
   {
     id: 'sl003',
@@ -386,6 +436,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Think back on your day', 'What brought you joy', 'Write them down'],
     altId: 'sl004',
+    followUp: [],
   },
   {
     id: 'sl004',
@@ -396,6 +447,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Even stupid stuff counts', 'Funny faces or coffee mishap', 'Celebrate the small wins'],
     altId: 'sl003',
+    followUp: [],
   },
   {
     id: 'sl005',
@@ -406,6 +458,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['Log out of all social apps', 'Delete them temporarily if needed', 'Notice your thoughts and urges'],
     altId: 'sl006',
+    followUp: [],
   },
   {
     id: 'sl006',
@@ -416,6 +469,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 5,
     steps: ['No Instagram, no TikTok, no scrolling', 'What would 90s-you do', 'Maybe call someone on the phone'],
     altId: 'sl005',
+    followUp: [],
   },
   {
     id: 'sl007',
@@ -426,6 +480,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Think of something that moved you', 'Share it with context', 'Tag someone who might appreciate it'],
     altId: 'sl008',
+    followUp: [],
   },
   {
     id: 'sl008',
@@ -436,6 +491,7 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     durationMin: 10,
     steps: ['Song, quote, or meme', 'Post it somewhere', 'Spread the good vibes'],
     altId: 'sl007',
+    followUp: [],
   },
   {
     id: 'sl009',
@@ -445,5 +501,15 @@ export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
     tone: 'playful',
     durationMin: 5,
     steps: ['Open Spotify or Apple Music discovery', 'Hit play on something random', 'Dance like nobody is watching because they are not'],
+    followUp: [],
   },
+];
+
+/**
+ * MAIN EXPORT: Combined challenge pool
+ * Client challenges come first (primary), original challenges as backup
+ */
+export const CHALLENGE_SEEDS: ChallengeTemplate[] = [
+  ...CLIENT_CHALLENGE_SEEDS,
+  ...ORIGINAL_CHALLENGE_SEEDS,
 ];

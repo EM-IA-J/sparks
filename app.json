@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "sparks",
+    "name": "Challenge me",
     "slug": "sparks",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,15 +15,15 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jaimegarcia.sparks",
-      "buildNumber": "23",
+      "buildNumber": "25",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification",
           "fetch"
         ],
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized notifications to you.",
-        "NSCameraUsageDescription": "Allow Sparks to access your camera to capture photos of completed challenges.",
-        "NSPhotoLibraryUsageDescription": "Allow Sparks to access your photo library to save challenge photos."
+        "NSCameraUsageDescription": "Allow Challenge me to access your camera to capture photos of completed challenges.",
+        "NSPhotoLibraryUsageDescription": "Allow Challenge me to access your photo library to save challenge photos."
       }
     },
     "android": {

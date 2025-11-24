@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserStore } from '../../src/store/useUserStore';
 import { useAssignmentStore } from '../../src/store/useAssignmentStore';
 import { Card, StatCard, HeatMap } from '../../src/components';
@@ -79,9 +80,10 @@ export default function ProgressScreen() {
     .slice(0, 5);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>{COPY.progress.title}</Text>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.content}>
+          <Text style={styles.title}>{COPY.progress.title}</Text>
 
         <Card style={styles.streakCard}>
           <Text style={styles.streakNumber}>{user?.streak || 0}</Text>
@@ -183,14 +185,22 @@ export default function ProgressScreen() {
         </Card>
       )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.bg,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.bg,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   content: {
     padding: theme.spacing.lg,
@@ -200,7 +210,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xxxl,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
-    marginTop: theme.spacing.xl,
+    marginTop: theme.spacing.md,
     marginBottom: theme.spacing.lg,
   },
   streakCard: {

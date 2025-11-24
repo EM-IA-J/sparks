@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Modal, AppState, AppStateStatus } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useUserStore } from '../../src/store/useUserStore';
 import { useAssignmentStore } from '../../src/store/useAssignmentStore';
-import { Button, Card, TimerRing, Chip, BreathingExercise } from '../../src/components';
+import { Button, Card, TimerRing, Chip, BreathingExercise, UserProfile } from '../../src/components';
 import { AssignerService } from '../../src/services/assigner';
 import { NotificationService } from '../../src/services/notifications';
 import { StorageService } from '../../src/services/storage';
@@ -13,6 +14,7 @@ import { ACHIEVEMENTS } from '../../src/data/achievements.seed';
 import { theme } from '../../src/theme';
 import { COPY } from '../../src/copy';
 import { FeedbackType } from '../../src/types';
+import { shouldShowBreathing, getStepNumber, getCompletedChallengesCount } from '../../src/utils/progression';
 
 const DEFAULT_TIMER = 20 * 60; // 20 minutes default
 
@@ -37,7 +39,9 @@ export default function HomeScreen() {
   const [remainingSeconds, setRemainingSeconds] = useState(DEFAULT_TIMER);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showBreathing, setShowBreathing] = useState(false);
+  const [showFollowUp, setShowFollowUp] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const appStateRef = useRef(AppState.currentState);
 
   const currentTemplate = currentAssignment
     ? AssignerService.getTemplate(currentAssignment.templateId)
@@ -49,7 +53,8 @@ export default function HomeScreen() {
 
   // Load or assign challenge on mount
   useEffect(() => {
-    if (!user || !user.onboardingCompleted) {
+    // Check user is ready AND has valid areas array
+    if (!user || !user.onboardingCompleted || !user.areas || user.areas.length === 0) {
       console.log('User not ready:', user);
       return;
     }
@@ -100,6 +105,46 @@ export default function HomeScreen() {
     restoreTimer();
   }, [currentAssignment?.status]);
 
+  // Handle app state changes (background/foreground) to keep timer accurate
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      // When app comes to foreground from background
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        // Recalculate timer based on stored start time
+        if (timerRunning || currentAssignment?.status === 'started') {
+          const timerState = await StorageService.getTimerState();
+          if (timerState) {
+            const { startTime, totalSeconds } = timerState;
+            const now = Date.now();
+            const elapsedSeconds = Math.floor((now - startTime) / 1000);
+            const remaining = totalSeconds - elapsedSeconds;
+
+            if (remaining > 0) {
+              setRemainingSeconds(remaining);
+              if (!timerRunning) {
+                setTimerRunning(true);
+              }
+            } else {
+              // Timer finished while in background
+              handleTimerComplete();
+            }
+          }
+        }
+      }
+
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [timerRunning, currentAssignment?.status]);
+
   // Timer logic
   useEffect(() => {
     if (timerRunning) {
@@ -127,22 +172,31 @@ export default function HomeScreen() {
 
   const handleTimerComplete = async () => {
     setTimerRunning(false);
-    setShowFeedback(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     // Clear timer state from storage
     await StorageService.clearTimerState();
-    // Note: The scheduled notification will fire automatically when timer ends
+
+    // Check if there's follow-up content to show
+    if (currentTemplate?.followUp && currentTemplate.followUp.length > 0) {
+      setShowFollowUp(true);
+    } else {
+      setShowFeedback(true);
+    }
   };
 
   const handleStart = async () => {
     startChallenge();
 
-    // Cancel gentle nudge since user started the spark
+    // Cancel gentle nudge since user started the challenge
     await NotificationService.cancelGentleNudge();
 
-    // Check if breathing should be skipped based on preference
-    if (user?.breathingPreference === 'never') {
+    // Check if breathing should be shown:
+    // 1. User has not opted out (breathingPreference !== 'never')
+    // 2. User has completed at least 2 challenges (stepNumber >= 3)
+    const canShowBreathing = user?.breathingPreference !== 'never' && shouldShowBreathing(history);
+
+    if (!canShowBreathing) {
       // Skip breathing, go straight to timer
       setTimerRunning(true);
       const totalSeconds = currentTemplate?.durationMin ? currentTemplate.durationMin * 60 : DEFAULT_TIMER;
@@ -152,6 +206,24 @@ export default function HomeScreen() {
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  // Handlers for breathing exercise Back/Skip
+  const handleBreathingBack = () => {
+    // Go back to the pre-challenge state (cancel the start)
+    setShowBreathing(false);
+    // Reset challenge status back to assigned
+    if (currentAssignment) {
+      useAssignmentStore.getState().updateAssignment({ status: 'assigned', startedAt: undefined });
+    }
+  };
+
+  const handleBreathingSkip = async () => {
+    // Skip breathing and go straight to challenge timer
+    setShowBreathing(false);
+    setTimerRunning(true);
+    const totalSeconds = currentTemplate?.durationMin ? currentTemplate.durationMin * 60 : DEFAULT_TIMER;
+    await StorageService.saveTimerState(Date.now(), totalSeconds);
   };
 
   const handleBreathingComplete = async (feeling?: string) => {
@@ -182,11 +254,23 @@ export default function HomeScreen() {
 
   const handleComplete = async () => {
     setTimerRunning(false);
-    setShowFeedback(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     // Clear timer state from storage
     await StorageService.clearTimerState();
+
+    // Check if there's follow-up content to show
+    if (currentTemplate?.followUp && currentTemplate.followUp.length > 0) {
+      setShowFollowUp(true);
+    } else {
+      setShowFeedback(true);
+    }
+  };
+
+  // Handler to proceed from follow-up to feedback
+  const handleFollowUpComplete = () => {
+    setShowFollowUp(false);
+    setShowFeedback(true);
   };
 
   const handleFeedback = async (feedback: FeedbackType, wouldRepeat: boolean) => {
@@ -283,22 +367,27 @@ export default function HomeScreen() {
     }
   };
 
-  // Loading state
-  if (!user || !user.onboardingCompleted) {
+  // Loading state - also check if user has valid areas array
+  if (!user || !user.onboardingCompleted || !user.areas || user.areas.length === 0) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loading}>Complete onboarding to get started!</Text>
-      </View>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.centerContainer}>
+          <Text style={styles.loading}>Complete onboarding to get started!</Text>
+          <Text style={styles.debug}>Please reset the app data in Settings or reinstall.</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!currentTemplate) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loading}>Loading your spark...</Text>
-        <Text style={styles.debug}>User areas: {user.areas.join(', ')}</Text>
-        <Text style={styles.debug}>Has assignment: {currentAssignment ? 'yes' : 'no'}</Text>
-      </View>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.centerContainer}>
+          <Text style={styles.loading}>Loading your challenge...</Text>
+          <Text style={styles.debug}>User areas: {user.areas?.join(', ') || 'none'}</Text>
+          <Text style={styles.debug}>Has assignment: {currentAssignment ? 'yes' : 'no'}</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -309,6 +398,8 @@ export default function HomeScreen() {
         <View style={styles.breathingModal}>
           <BreathingExercise
             onComplete={handleBreathingComplete}
+            onBack={handleBreathingBack}
+            onSkip={handleBreathingSkip}
             isFirstTime={user?.isFirstBreathing ?? true}
           />
         </View>
@@ -316,9 +407,36 @@ export default function HomeScreen() {
     );
   }
 
+  // Follow-up screen - shown after challenge completion if followUp content exists
+  if (showFollowUp && currentTemplate?.followUp && currentTemplate.followUp.length > 0) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Card style={styles.followUpCard}>
+          <Text style={styles.followUpTitle}>Reflection</Text>
+          <Text style={styles.followUpSubtitle}>Take a moment to think about:</Text>
+          {currentTemplate.followUp.map((question, index) => (
+            <View key={index} style={styles.followUpItem}>
+              <Text style={styles.followUpNumber}>{index + 1}.</Text>
+              <Text style={styles.followUpText}>{question}</Text>
+            </View>
+          ))}
+          <Button
+            title="Continue"
+            onPress={handleFollowUpComplete}
+            size="lg"
+            style={styles.followUpButton}
+          />
+        </Card>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   if (showFeedback) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <Card style={styles.feedbackCard}>
           <Text style={styles.feedbackTitle}>{COPY.home.howWasIt}</Text>
           <View style={styles.feedbackRow}>
@@ -328,17 +446,22 @@ export default function HomeScreen() {
             <Button title="🔥" onPress={() => handleFeedback('fire', true)} size="lg" style={styles.feedbackBtn} />
           </View>
         </Card>
-      </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
-  // Determine if this is the first spark
+  // Determine if this is the first challenge
   const isFirstSpark = history.length === 0;
   const greetingText = isFirstSpark ? COPY.home.firstSpark : COPY.home.nextSpark;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.greeting}>{greetingText}</Text>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.headerRow}>
+          <Text style={styles.greeting}>{greetingText}</Text>
+          <UserProfile />
+        </View>
 
       {user && (
         <Text style={styles.streak}>🔥 {user.streak} day streak</Text>
@@ -430,10 +553,21 @@ export default function HomeScreen() {
         )}
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.bg,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.bg,
@@ -441,6 +575,13 @@ const styles = StyleSheet.create({
   content: {
     padding: theme.spacing.lg,
     paddingBottom: theme.spacing.xxl,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.xs,
   },
   loading: {
     fontSize: theme.fontSize.lg,
@@ -458,8 +599,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xxxl,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
-    marginTop: theme.spacing.xl,
-    marginBottom: theme.spacing.sm,
+    flex: 1,
   },
   streak: {
     fontSize: theme.fontSize.lg,
@@ -584,5 +724,39 @@ const styles = StyleSheet.create({
   skipButton: {
     marginTop: theme.spacing.xxl,
     minWidth: 120,
+  },
+  // Follow-up screen styles
+  followUpCard: {
+    marginTop: theme.spacing.xl,
+  },
+  followUpTitle: {
+    fontSize: theme.fontSize.xxl,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  followUpSubtitle: {
+    fontSize: theme.fontSize.base,
+    color: theme.colors.textLight,
+    marginBottom: theme.spacing.lg,
+  },
+  followUpItem: {
+    flexDirection: 'row',
+    marginBottom: theme.spacing.md,
+  },
+  followUpNumber: {
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.primary,
+    marginRight: theme.spacing.sm,
+  },
+  followUpText: {
+    flex: 1,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.text,
+    lineHeight: 24,
+  },
+  followUpButton: {
+    marginTop: theme.spacing.lg,
   },
 });

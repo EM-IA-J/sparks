@@ -42,6 +42,7 @@ export interface ChallengeTemplate {
   durationMin?: number;
   steps?: string[];
   altId?: string; // paired A/B alternative
+  followUp?: string[]; // Follow-up questions/reflections after challenge completion
 }
 
 export interface ChallengeAssignment {

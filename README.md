@@ -1,36 +1,35 @@
-# Sparks ✨
+# Challenge Me
 
-**Small challenges. Big shifts.**
+**The place where you need to act, not to think.**
 
-Sparks is a motivational micro-challenge app that activates users' lives through daily or weekly challenges across 1-3 life areas. Built with React Native + Expo, it creates adherence and motivation through emotional design, positive reinforcement, and light gamification.
+Challenge Me is a micro-challenge app that pushes users to take action through real-world activities across 8 life areas. Built with React Native + Expo, it creates motivation through direct challenges, breathing exercises, and progress tracking.
 
 ---
 
-## 🎯 Overview
+## Overview
 
-Sparks delivers bite-sized challenges designed to create small doses of emotion, vulnerability, or personal discovery. Each challenge is deterministic (based on date + user areas), avoiding repetition and balancing serious and playful tones.
+Challenge Me delivers actionable challenges designed to get you moving, connecting, growing, and living. Each challenge is based on real activities - running, calling family, attending classes, managing finances, and more. The app guides users through a breathing exercise before each challenge (from step 3 onwards) to help them get grounded and present.
 
 ### Core Features
 
-- **Onboarding**: Select 3 life areas, cadence (daily/weekly), notification window, and social opt-in with animated confetti celebration
-- **Daily Challenges**: Deterministic assignment with A/B tone pairing and one-time swap option
-- **Breathing Exercise**: Pre-challenge mindfulness session with animated breathing guide
-- **Timer System**: Persistent in-app countdown with animated breathing ring, pause/resume, and push notifications
-- **3-Notification Flow**: Spark start → Timer complete → Feedback submitted
-- **Feedback Loop**: Emoji feedback (🔥/🙂/😐/💩) + "would you repeat?" question
+- **Welcome Screen**: Clean introduction with the app philosophy
+- **Onboarding**: Select 1-2 life areas, cadence (daily/weekly), notification time, and social opt-in
+- **Daily Challenges**: 50+ real-world activities based on client-written content
+- **Breathing Exercise**: Pre-challenge mindfulness session (appears from step 3 after 2 completed challenges)
+- **Timer System**: Countdown timer that continues in background, with persistence across app restarts
+- **Follow-up Questions**: Reflection prompts after completing challenges
+- **Feedback Loop**: Emoji feedback + "would you repeat?" question
 - **Progress Tracking**: Streak counter, calendar heatmap, area breakdown, top moments
-- **Achievement System**: 22 unlockable badges across 5 categories (streak, total, timing, area, special)
-- **Social Leaderboard**: Mock friends system with nudging, streak comparison, and achievements display
-- **User Profile**: Avatar with initials displayed in header, showing streak and quick access to settings
-- **Progress Sharing**: Share your streak and accomplishments on social media with custom message
-- **Settings**: Full customization with progress sharing and danger zone for data reset
+- **Achievement System**: 22 unlockable badges across 5 categories
+- **Social Leaderboard**: Friends system with nudging and achievements display
+- **Settings**: Full customization with time picker and danger zone for data reset
 
 ---
 
-## 📦 Tech Stack
+## Tech Stack
 
-- **Framework**: Expo SDK 54 + React Native 0.81
-- **Language**: TypeScript (strict mode)
+- **Framework**: Expo SDK 54 + React Native
+- **Language**: TypeScript
 - **Navigation**: expo-router (file-based routing)
 - **State**: Zustand for global state management
 - **Storage**: AsyncStorage for persistence
@@ -40,7 +39,7 @@ Sparks delivers bite-sized challenges designed to create small doses of emotion,
 
 ---
 
-## 🚀 Setup
+## Setup
 
 ### Prerequisites
 
@@ -72,58 +71,208 @@ No API keys or environment variables required for basic functionality. Push noti
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 sparks/
-├── app/                      # Expo Router screens
-│   ├── _layout.tsx          # Root layout with navigation logic
-│   ├── onboarding.tsx       # Onboarding flow
-│   ├── settings.tsx         # Settings screen
-│   └── (tabs)/              # Tab navigation
-│       ├── _layout.tsx      # Tab layout
-│       ├── index.tsx        # Home/Challenge screen
-│       ├── progress.tsx     # Progress & stats
-│       └── social.tsx       # Social leaderboard
+├── app/                          # Expo Router screens
+│   ├── _layout.tsx               # Root layout with navigation logic
+│   ├── onboarding.tsx            # Welcome + area selection flow
+│   ├── settings.tsx              # Settings screen
+│   └── (tabs)/                   # Tab navigation
+│       ├── _layout.tsx           # Tab layout configuration
+│       ├── index.tsx             # Home/Challenge screen
+│       ├── progress.tsx          # Progress & stats
+│       └── social.tsx            # Social leaderboard & achievements
 ├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── Button.tsx       # Haptic-enabled buttons
-│   │   ├── Card.tsx         # Content card wrapper
-│   │   ├── Chip.tsx         # Selectable area chips
-│   │   ├── TimerRing.tsx    # Animated countdown ring with breathing effect
-│   │   ├── UserProfile.tsx  # User avatar and streak
-│   │   ├── BreathingExercise.tsx  # Pre-challenge breathing animation
-│   │   ├── StatCard.tsx     # Stats display card
-│   │   ├── HeatMap.tsx      # Calendar progress heatmap
-│   │   ├── AchievementBadge.tsx   # Achievement display with progress
-│   │   ├── SplashScreen.tsx # App splash screen
-│   │   └── index.ts         # Component exports
-│   ├── store/               # Zustand stores
-│   │   ├── useUserStore.ts  # User state, achievements & preferences
-│   │   ├── useAssignmentStore.ts  # Challenge assignments & history
-│   │   └── useSettingsStore.ts    # Friends & settings
-│   ├── services/            # Business logic
-│   │   ├── assigner.ts      # Challenge assignment algorithm
-│   │   ├── notifications.ts # Push notification scheduling (3-step flow)
-│   │   ├── storage.ts       # AsyncStorage helpers with timer persistence
-│   │   └── achievements.ts  # Achievement checking & progress tracking
+│   ├── components/               # Reusable UI components
+│   │   ├── Button.tsx            # Haptic-enabled buttons
+│   │   ├── Card.tsx              # Content card wrapper
+│   │   ├── Chip.tsx              # Selectable area chips
+│   │   ├── TimerRing.tsx         # Animated countdown ring
+│   │   ├── UserProfile.tsx       # User avatar and settings access
+│   │   ├── BreathingExercise.tsx # Pre-challenge breathing animation
+│   │   ├── StatCard.tsx          # Stats display card
+│   │   ├── HeatMap.tsx           # Calendar progress heatmap
+│   │   ├── AchievementBadge.tsx  # Achievement display with progress
+│   │   └── index.ts              # Component exports
+│   ├── store/                    # Zustand stores
+│   │   ├── useUserStore.ts       # User state, achievements & preferences
+│   │   ├── useAssignmentStore.ts # Challenge assignments & history
+│   │   └── useSettingsStore.ts   # Friends & settings
+│   ├── services/                 # Business logic
+│   │   ├── assigner.ts           # Challenge assignment algorithm
+│   │   ├── notifications.ts      # Push notification scheduling
+│   │   ├── storage.ts            # AsyncStorage helpers with timer persistence
+│   │   └── achievements.ts       # Achievement checking & progress tracking
 │   ├── data/
-│   │   ├── challenges.seed.ts  # 30+ challenge templates
-│   │   └── achievements.seed.ts # 22 achievement definitions
+│   │   ├── client-challenges.seed.ts  # 50 client-written challenges
+│   │   ├── challenges.seed.ts         # Combined challenge pool (85 total)
+│   │   └── achievements.seed.ts       # 22 achievement definitions
 │   ├── utils/
-│   │   └── time.ts          # Time/date utilities
-│   ├── types.ts             # TypeScript types
-│   ├── copy.ts              # Centralized UI copy
-│   └── theme.ts             # Design tokens
-├── assets/                   # Images and icons
-├── app.json                  # Expo config
+│   │   ├── time.ts               # Time/date utilities
+│   │   └── progression.ts        # Step counting & breathing gate logic
+│   ├── types.ts                  # TypeScript types
+│   ├── copy.ts                   # Centralized UI copy
+│   └── theme.ts                  # Design tokens
+├── assets/                       # Images and icons
+├── app.json                      # Expo config
 ├── package.json
 └── README.md
 ```
 
 ---
 
-## 🎨 Design System
+## Challenge System
+
+### Challenge Categories & Counts
+
+| Category | Area Tag | Challenges | Focus |
+|----------|----------|------------|-------|
+| Health & Fitness | `health` | 7 | Running, gym classes, fasting, no sugar |
+| Family & Friends | `social` | 7 | Reconnecting, game nights, hiking |
+| Self-Love | `selflove` | 7 | Self-care, affirmations, boundaries |
+| Career & Purpose | `focus` | 7 | Ikigai, job exploration, networking |
+| Romance | `romance` | 7 | Dating apps, dance classes, speed dating |
+| Fun & Creativity | `creativity` | 8 | Painting, DJing, music, poker |
+| Money & Finances | `money` | 7 | Budgeting, saving, subscription audit |
+| **Total Client Challenges** | | **50** | |
+| Original Challenges | mixed | 35 | Various activities |
+| **Total Pool** | | **85** | |
+
+### Example Challenges
+
+**Health - Go for a 2K Run**
+```
+Put on sports clothes, pick a route, and run at least 2 kilometers.
+
+Steps:
+1. Put on sports clothes and running shoes
+2. Check the route distance using a maps app
+3. Stretch your legs before starting
+4. Run at least 2 kilometers
+5. Take a photo of yourself at the end
+
+Follow-up: How did it go? Would you recommend running?
+```
+
+**Social - Reconnect with Family**
+```
+Reach out to a family member you have not talked to in a while.
+
+Steps:
+1. Think of the family member you haven't been in touch with
+2. Consider if you miss them or want to make up for past conflicts
+3. Send them a message or make a call
+4. Be genuine and open in your conversation
+
+Follow-up: How did it feel to reconnect? Will you stay in touch?
+```
+
+**Romance - Partner Dance Class**
+```
+Book a partner dance class: Salsa, Swing, or Tango.
+
+Steps:
+1. Search for partner dance classes near you
+2. Choose: Salsa, Swing, Tango, or Bachata
+3. Book a session for the earliest date
+4. Go alone - you'll be paired with others
+5. Enjoy the shared activity and natural conversation
+```
+
+### Assignment Algorithm
+
+```typescript
+// Filter challenges by user's selected areas (1-2 areas)
+eligible = challenges.filter(c => c.areaTags overlaps user.areas)
+
+// Exclude already completed challenges
+fresh = eligible.filter(c => !history.includes(c.id))
+
+// If all used, reset pool
+if (fresh.length === 0) fresh = eligible
+
+// 70% serious / 30% playful tone selection
+tone = (seed % 100) < 70 ? 'serious' : 'playful'
+
+// Pick first matching challenge (sequential, not random)
+selected = tonedChallenges[0]
+```
+
+---
+
+## User Flow
+
+### 1. Welcome Screen
+- App title and philosophy
+- "Continue" button to proceed
+
+### 2. Onboarding
+- Select 1-2 life areas to focus on
+- Choose notification cadence (daily/every 2 days/every 3 days/weekly)
+- Set preferred notification time with time picker
+- Toggle social sharing
+
+### 3. Challenge Flow
+```
+[Challenge Assigned]
+        ↓
+[START button pressed]
+        ↓
+[Breathing Exercise] ← Only shown after 2 completed challenges
+   - Back / Skip options
+   - "Ready?" question after breathing
+   - "Give me a few minutes" option with 2-min wait
+        ↓
+[Timer starts - runs in background]
+        ↓
+[COMPLETED or GIVE UP]
+        ↓
+[Follow-up reflection] ← If challenge has followUp questions
+        ↓
+[Feedback: emoji + would repeat?]
+        ↓
+[Next challenge assigned]
+```
+
+### 4. Breathing Exercise Logic
+- **Step 1-2**: No breathing exercise (first-time users)
+- **Step 3+**: Breathing exercise shown before each challenge
+- Users can opt out permanently with "Don't show again"
+
+---
+
+## Achievement System
+
+### Categories
+
+**Streak Achievements** (4 badges)
+- Getting Started: 3 days in a row
+- Week Warrior: 7 days in a row
+- Monthly Master: 30 days in a row
+- Century Club: 100 days in a row
+
+**Total Completion** (5 badges)
+- First Spark: Complete 1 challenge
+- Ten Strong: Complete 10 challenges
+- Marathonian: Complete 42 challenges
+- Centurion: Complete 100 challenges
+- Year Round: Complete 365 challenges
+
+**Timing** (2 badges)
+- Morning Person: 7 morning completions
+- Night Owl: 7 evening completions
+
+**Area-Specific** (5 badges)
+- Health Master, Creative Genius, Social Butterfly, Nature Lover, Focus Master
+
+**Special** (6 badges)
+- No Swap Sam, Speed Demon, Jack of All Areas, Feedback Fire, Memory Keeper, Social Spark
+
+---
+
+## Design System
 
 ### Colors (Google Material Design)
 
@@ -131,403 +280,112 @@ sparks/
 - **Secondary**: `#34A853` (Google Green)
 - **Error**: `#EA4335` (Google Red)
 - **Warning**: `#FBBC04` (Google Yellow)
-- **Background**: `#FFFFFF` (clean white)
-- **Text**: `#202124` (Google dark gray)
-- **Area Colors**: Each of 8 areas has a unique vibrant color from Google palette
+- **Background**: `#FFFFFF`
+- **Text**: `#202124`
 
-### Spacing
+### Area Colors
 
-- `xs`: 4px, `sm`: 8px, `md`: 16px, `lg`: 24px, `xl`: 32px, `xxl`: 48px
-
-### Typography
-
-- **Display**: 48px bold (onboarding titles)
-- **xxxl**: 32px bold (screen titles)
-- **xxl**: 24px bold (card headers)
-- **base**: 16px regular (body text)
+Each area has a unique color for chips and visualizations:
+- Health, Creativity, Social, Nature, Focus, Money, Romance, Self-love
 
 ### Components
 
 - **Button**: 4 variants (primary, secondary, outline, danger) with haptic feedback
-- **Card**: Elevated container with rounded corners and shadow
-- **Chip**: Toggle-able area/option selector with color coding
-- **TimerRing**: Circular progress indicator with animated breathing effect
-- **BreathingExercise**: Full-screen pre-challenge mindfulness animation
-- **UserProfile**: Avatar with initials, streak counter, and navigation to settings
+- **Card**: Elevated container with rounded corners
+- **Chip**: Toggle-able area selector with color coding
+- **TimerRing**: Circular countdown indicator
+- **BreathingExercise**: Full-screen modal with back/skip controls
 - **HeatMap**: Calendar-based progress visualization
-- **AchievementBadge**: Unlockable badge display with progress bars
-- **StatCard**: Stat display with icons and values
+- **AchievementBadge**: Badge display with progress bars
 
 ---
 
-## 🧩 Challenge System
+## Screens
 
-### Challenge Templates
+### Home (Challenge)
+- Header with greeting and UserProfile (access to settings)
+- Current streak display
+- Challenge card with title, description, steps, and area tags
+- Timer ring when active
+- Start/Complete/Give Up buttons
 
-30+ challenges across 8 areas:
+### Progress
+- Large streak card
+- Stats grid: completed, fire moments, success rate, total hours, best day
+- Calendar heatmap of activity
+- Area breakdown
+- Top moments (fire-rated challenges)
 
-1. **Health**: Cold shower, meditation, phone detox
-2. **Creativity**: Drawing, haiku, cooking experiments
-3. **Social**: Friend calls, barista conversations, compliments
-4. **Nature**: Silent walks, tree naming, barefoot grounding
-5. **Focus**: App blocking, deep reading, subscription audit
-6. **Money**: Subscription audit, micro-savings
-7. **Romance**: Profile refresh, smile missions
-8. **Self-love**: Decluttering, gratitude lists, digital detox
+### Social
+- User rank card
+- Friends leaderboard with nudge buttons
+- Achievements section sorted by unlock status
 
-### Assignment Algorithm
-
-```typescript
-// Deterministic seed based on date + user areas
-seed = hash(todayDate + sortedAreas)
-
-// Filter by user's selected areas
-eligible = challenges.filter(c => c.areaTags overlaps user.areas)
-
-// Avoid last 5 completed
-fresh = eligible.filter(c => !recentHistory.includes(c.id))
-
-// 70% serious / 30% playful tone
-tone = (seed % 100) < 70 ? 'serious' : 'playful'
-
-// Pick challenge deterministically
-index = seed % tonedChallenges.length
-selected = tonedChallenges[index]
-```
-
-### A/B Pairing
-
-Each challenge has an `altId` linking to its opposite tone:
-- **Serious**: "Cold shock therapy" (60s cold shower)
-- **Playful**: "Ice ice baby" (dance in freezing shower)
-
-Users can swap once per challenge.
+### Settings
+- Area selection (1-2 areas)
+- Cadence selection
+- Time picker for notifications
+- Social opt-in toggle
+- Share progress button
+- Danger zone: reset all data
 
 ---
 
-## 🏆 Achievement System
-
-### Achievement Categories
-
-**Streak Achievements** (4 badges)
-- 🔥 **Getting Started**: Complete 3 days in a row
-- 🔥 **Week Warrior**: Complete 7 days in a row
-- 🔥 **Monthly Master**: Complete 30 days in a row
-- 🔥 **Century Club**: Complete 100 days in a row
-
-**Total Completion** (5 badges)
-- ⚡ **First Spark**: Complete your first challenge
-- ⚡ **Ten Strong**: Complete 10 challenges
-- 🏃 **Marathonian**: Complete 42 challenges (like a marathon!)
-- 💯 **Centurion**: Complete 100 challenges
-- 📅 **Year Round**: Complete 365 challenges
-
-**Timing** (2 badges)
-- 🌅 **Morning Person**: Complete 7 morning sparks (6am-12pm)
-- 🌙 **Night Owl**: Complete 7 evening sparks (6pm-12am)
-
-**Area-Specific** (5 badges)
-- 💪 **Health Master**: Complete 20 health challenges
-- 🎨 **Creative Genius**: Complete 20 creativity challenges
-- 👥 **Social Butterfly**: Complete 20 social challenges
-- 🌳 **Nature Lover**: Complete 20 nature challenges
-- 🎯 **Focus Master**: Complete 20 focus challenges
-
-**Special** (6 badges)
-- 🎯 **No Swap Sam**: Complete 10 challenges without swapping
-- ⚡ **Speed Demon**: Complete 5 challenges early
-- 🌈 **Jack of All Areas**: Complete challenges in all 8 areas
-- 🔥 **Feedback Fire**: Give 10 fire (🔥) ratings
-- 📸 **Memory Keeper**: Upload 5 photos (future)
-- 🤝 **Social Spark**: Invite 3 friends (future)
-
-### How Achievements Work
-
-1. **Auto-unlock**: Achievements unlock automatically when you complete a challenge
-2. **Progress Tracking**: See your progress towards locked achievements with progress bars
-3. **Visual Feedback**: Get an alert when you unlock a new achievement
-4. **Display**: View all achievements in the Social tab, sorted by unlock status
-
----
-
-## 🧪 Wireframes
-
-### 1. Onboarding
-
-```
-┌─────────────────────┐
-│  Welcome to Sparks  │
-│ Small challenges.   │
-│    Big shifts.      │
-│                     │
-│ Pick 3 areas:       │
-│ [Health] [Creativity]│
-│ [Social] [Nature]   │
-│ [Focus] [Money]     │
-│ [Romance] [Self-love]│
-│                     │
-│ Cadence: [Daily]    │
-│ Window: [Morning]   │
-│ Social: [Toggle]    │
-│                     │
-│   [Spark me] 🔥     │
-└─────────────────────┘
-```
-
-### 2. Home/Challenge
-
-```
-┌─────────────────────┐
-│ Today's Spark       │
-│ 🔥 3 day streak     │
-│                     │
-│ ┌─────────────────┐ │
-│ │ Cold Shock      │ │
-│ │ Therapy         │ │
-│ │                 │ │
-│ │ Take a 60s cold │ │
-│ │ shower          │ │
-│ │                 │ │
-│ │ 1. Warm start   │ │
-│ │ 2. Go cold 60s  │ │
-│ │ 3. Breathe deep │ │
-│ │                 │ │
-│ │ [health]        │ │
-│ └─────────────────┘ │
-│                     │
-│ Alternative:        │
-│ Ice ice baby        │
-│ [Swap]              │
-│                     │
-│    ⭕ 20:00         │
-│                     │
-│ [Start Challenge]   │
-└─────────────────────┘
-```
-
-### 3. Progress
-
-```
-┌─────────────────────┐
-│ Progress            │
-│                     │
-│ ┌─────────────────┐ │
-│ │      12         │ │
-│ │   day streak    │ │
-│ └─────────────────┘ │
-│                     │
-│ Total: 45 sparks    │
-│                     │
-│ By Area:            │
-│ ● Health: 15        │
-│ ● Creativity: 12    │
-│ ● Social: 10        │
-│ ● Nature: 8         │
-│                     │
-│ Top Moments:        │
-│ 🔥 Challenge 1      │
-│ 🔥 Challenge 3      │
-│ 🔥 Challenge 7      │
-└─────────────────────┘
-```
-
-### 4. Social
-
-```
-┌─────────────────────┐
-│ Social              │
-│                     │
-│ ┌─────────────────┐ │
-│ │ 👑 You          │ │
-│ │ 12 day streak   │ │
-│ │ 45 sparks       │ │
-│ └─────────────────┘ │
-│                     │
-│ Leaderboard         │
-│                     │
-│ #2 🔥 Alex          │
-│    12 · 45    [Nudge]│
-│                     │
-│ #3 ⚡ Jordan        │
-│    8 · 32     [Nudge]│
-│                     │
-│ #4 🌟 Sam (invited) │
-│    0 · 0            │
-│                     │
-│ [Invite Friend]     │
-│                     │
-│ Achievements        │
-│                     │
-│ ┌─────────────────┐ │
-│ │ 🔥 Week Warrior │ │
-│ │ Complete 7 days │ │
-│ │ Unlocked 2 days │ │
-│ │ ago             │ │
-│ └─────────────────┘ │
-│                     │
-│ ┌─────────────────┐ │
-│ │ 🔒 Marathonian  │ │
-│ │ Complete 42...  │ │
-│ │ ████░░░░ 12/42  │ │
-│ └─────────────────┘ │
-└─────────────────────┘
-```
-
----
-
-## 📊 Test Plan (2 Weeks)
-
-### Week 1: Internal Testing
-
-**Days 1-3**: Core flow validation
-- Complete onboarding 5 times with different area combinations
-- Verify challenge assignment is deterministic (same date/areas = same challenge)
-- Test swap functionality (only works once)
-- Validate timer countdown + pause/resume
-- Confirm notification scheduling
-
-**Days 4-7**: Edge cases
-- Skip challenges, verify they move to history
-- Test midnight expiration (set device time)
-- Break streak by missing a day, verify reset
-- Export data JSON, verify format
-- Reset all data, confirm clean state
-
-### Week 2: User Testing (10 Participants)
-
-**Recruitment**:
-- 5 users interested in self-improvement
-- 5 users skeptical of habit apps
-- Mix of iOS and Android
-
-**Test Protocol**:
-
-1. **Onboarding** (5 min)
-   - Can you complete setup without help?
-   - Did you understand what areas mean?
-   - Did confetti/haptic feel rewarding?
-
-2. **First Challenge** (10 min)
-   - Read challenge aloud. What's your first reaction?
-   - Is the tone appropriate (serious vs playful)?
-   - Would you actually do this challenge?
-   - Try the swap. Does the alternative feel different?
-
-3. **Timer Experience** (5 min)
-   - Start timer. Pause. Resume. Complete.
-   - Did the ring animation feel satisfying?
-   - Was 20min default too long/short/just right?
-
-4. **Feedback** (2 min)
-   - Rate with emojis. Does this capture your feeling?
-   - "Would you do this again?" - is this question valuable?
-
-5. **Daily Use** (7 days)
-   - Complete at least 3 challenges over 7 days
-   - Note which challenges felt meaningful vs annoying
-   - Track streak - does it motivate you?
-
-6. **Final Interview** (15 min)
-   - **Emotion**: "Which spark gave you energy today?"
-   - **Motivation**: "Was there a challenge that changed your mood?"
-   - **Habit**: "Can you see doing this for 30 days?"
-   - **Social**: "Would you invite friends?"
-   - **Improvement**: "What would make you use this daily?"
-
-### Metrics to Track
-
-| Metric | Target | Why |
-|--------|--------|-----|
-| Notification open rate | >40% | Indicates content relevance |
-| Challenge start rate | >60% | Shows initial engagement |
-| Challenge completion rate | >50% | Core behavior we're building |
-| Swap usage rate | ~20% | A/B testing effectiveness |
-| D7 retention | >30% | Habit formation signal |
-| Streak ≥3 days | >40% users | Momentum indicator |
-| Fire feedback (🔥) | >25% | Delightful moments |
-| Would repeat "yes" | >60% | Content-market fit |
-
-### Success Criteria
-
-**Must Have**:
-- Zero crashes during core flows
-- Timer accuracy within 1 second
-- Notifications fire within 1 minute of scheduled time
-- Onboarding completion >90%
-
-**Should Have**:
-- Challenge completion rate >50%
-- D7 retention >30%
-- At least 3 users say a challenge "changed their day"
-
-**Nice to Have**:
-- Users invite friends organically
-- Users request specific challenge types
-- Users customize challenge difficulty
-
----
-
-## 🔮 Future Enhancements
-
-### Near-term
-- Photo uploads for completed challenges (achievement ready)
-- Friends system (real, not mock) with achievement sharing
-- Custom challenge creation by users
-- Snooze +60min functionality
-- 14-day habit locking
-- Achievement notifications with custom animations
-- Achievement sharing on social media
-
-### Mid-term
-- AI-generated challenges based on mood and past performance
-- Voice-guided breathing exercises with customizable durations
-- Integration with HealthKit/Google Fit for health challenges
-- Weekly reflection summaries with achievement highlights
-- Challenge difficulty levels (easy/medium/hard)
-- Achievement leaderboard with friends
-
-### Long-term
-- Community challenges (citywide events) with group achievements
-- Therapist/coach partnerships with custom achievement tracks
-- Challenge marketplace where users can create and share
-- AR/VR immersive experiences for challenges
-- Achievement NFTs for milestone celebrations
-
----
-
-## 🐛 Known Issues
+## Known Issues
 
 1. **Web**: Push notifications don't work on web (Expo limitation)
-2. **Storage**: No cloud sync - data lives on device only (achievements included)
-3. **Timezones**: Assignment time is based on device local time
-4. **Authentication**: No user accounts yet - all data is local only
-5. **Achievements**: Speed Demon achievement uses placeholder logic (needs timer completion tracking)
-6. **Timer**: Breathing animation may stutter on low-end devices
+2. **Storage**: No cloud sync - data lives on device only
+3. **Timezones**: Assignment time based on device local time
+4. **Authentication**: No user accounts - all data is local
 
 ---
 
-## 📝 License
+## Development
 
-MIT License - feel free to fork and build upon this!
+### Adding New Challenges
+
+Add challenges to `src/data/client-challenges.seed.ts`:
+
+```typescript
+{
+  id: 'unique_id',
+  title: 'Challenge Title',
+  short: 'One sentence description.',
+  areaTags: ['health'], // or multiple: ['health', 'social']
+  tone: 'serious', // or 'playful'
+  durationMin: 20,
+  steps: [
+    'Step 1',
+    'Step 2',
+    'Step 3',
+  ],
+  followUp: [
+    'How did it go?',
+    'Would you do this again?',
+  ],
+}
+```
+
+### Running TypeScript Check
+
+```bash
+npx tsc --noEmit
+```
 
 ---
 
-## 🙏 Credits
+## License
 
-Built with love by a senior product engineer + designer who believes small actions create big change.
-
-**Stack**: React Native, Expo, TypeScript, Zustand, expo-router
-
-**Inspiration**: James Clear (Atomic Habits), BJ Fogg (Tiny Habits), streaks from Duolingo, design from Google Material
+MIT License
 
 ---
 
-## 📞 Contact
+## Credits
 
-Questions? Feedback? Want to contribute?
+Built with React Native, Expo, TypeScript, and Zustand.
 
-Open an issue or PR on GitHub.
+**Philosophy**: Small actions create big change. Act, don't think.
 
 ---
 
-**Remember: You're just one spark away from a breakthrough.** ✨🔥
+**Remember: You're one challenge away from a breakthrough.**
