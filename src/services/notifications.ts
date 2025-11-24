@@ -6,9 +6,12 @@ import { COPY } from '../copy';
 import { logger } from '../utils/logger';
 
 // --- GLOBAL HANDLER ---
+console.log('🟢 NOTIFICATION SERVICE LOADED - v4.0 🟢');
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -237,6 +240,60 @@ export const NotificationService = {
    */
   async cancelStreakAtRisk(): Promise<void> {
     await this.cancelByType('streak_at_risk');
+  },
+
+  /**
+   * Schedule the next challenge notification based on cadence
+   * This is called after completing a challenge to schedule the next one
+   */
+  async scheduleNextChallengeNotification(
+    notificationTime: NotificationTime,
+    cadence: Cadence
+  ): Promise<void> {
+    if (Platform.OS === 'web') return;
+    await ensureAndroidChannel();
+
+    // Cancel any existing daily challenge notifications
+    await this.cancelByType('daily_spark');
+
+    // Calculate interval days based on cadence
+    const intervalMap = { daily: 1, every2days: 2, every3days: 3, weekly: 7 };
+    const intervalDays = intervalMap[cadence] ?? 1;
+
+    // Calculate next notification date
+    // IMPORTANT: Since we just completed a challenge, we ALWAYS schedule for a future day (not today)
+    const now = new Date();
+    const nextDate = new Date();
+    nextDate.setHours(notificationTime.hour, notificationTime.minute, 0, 0);
+
+    logger.log(`⏰ Current time: ${now.toLocaleString()}`);
+    logger.log(`⏰ Base notification time: ${nextDate.toLocaleString()}`);
+
+    // Always add at least 1 day (tomorrow minimum), then add additional days for other cadences
+    nextDate.setDate(nextDate.getDate() + intervalDays);
+
+    logger.log(`⏰ Final scheduled time (after +${intervalDays} days): ${nextDate.toLocaleString()}`);
+
+    const hoursUntil = (nextDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    logger.log(`⏰ Hours until notification: ${hoursUntil.toFixed(1)} hours`);
+
+    // Schedule the notification with proper timestamp trigger
+    const trigger = nextDate.getTime(); // Convert to timestamp (milliseconds since epoch)
+
+    logger.log(`🔔 Scheduling with timestamp: ${trigger}`);
+
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: COPY.notifications.dailyTitle,
+        body: COPY.notifications.dailyBody,
+        sound: true,
+        data: { type: 'daily_spark', cadence },
+      },
+      trigger, // Use timestamp directly
+    });
+
+    logger.log(`✅ Scheduled next ${cadence} challenge for ${nextDate.toLocaleString()}`);
+    logger.log(`📍 Notification ID: ${notificationId}`);
   },
 
   /**

@@ -42,6 +42,7 @@ export default function HomeScreen() {
   const [showFollowUp, setShowFollowUp] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const appStateRef = useRef(AppState.currentState);
+  const isAssigningRef = useRef(false);
 
   const currentTemplate = currentAssignment
     ? AssignerService.getTemplate(currentAssignment.templateId)
@@ -59,18 +60,39 @@ export default function HomeScreen() {
       return;
     }
 
-    // If no current assignment or it's completed, assign new one
+    // Check if we're already in the process of assigning (to prevent double assignment)
+    if (isAssigningRef.current) {
+      return;
+    }
+
+    // If no current assignment or it's completed/expired, assign new one
     if (!currentAssignment || currentAssignment.status === 'completed' || currentAssignment.status === 'expired') {
       console.log('Assigning new challenge for user:', user);
       try {
+        isAssigningRef.current = true;
         const newAssignment = AssignerService.assignDailyChallenge(user, history);
         console.log('New assignment created:', newAssignment);
         setCurrentAssignment(newAssignment);
+        // Reset flag after a short delay
+        setTimeout(() => {
+          isAssigningRef.current = false;
+        }, 1000);
       } catch (error) {
         console.error('Error assigning challenge:', error);
+        isAssigningRef.current = false;
       }
     }
   }, [user, currentAssignment]);
+
+  // Clean up any old notifications on mount (run once)
+  useEffect(() => {
+    const cleanupNotifications = async () => {
+      console.log('🔵 NEW CODE LOADED - v4.0 🔵');
+      console.log('🧹 Checking notifications on app start...');
+      await NotificationService.listAll();
+    };
+    cleanupNotifications();
+  }, []); // Empty deps = run once on mount
 
   // Sync remaining seconds with current template duration when not running
   useEffect(() => {
@@ -274,14 +296,36 @@ export default function HomeScreen() {
   };
 
   const handleFeedback = async (feedback: FeedbackType, wouldRepeat: boolean) => {
+    console.log('🎯 === STARTING COMPLETION PROCESS ===');
+
+    // Check notifications BEFORE any changes
+    console.log('📋 Notifications BEFORE completion:');
+    await NotificationService.listAll();
+
     completeChallenge(feedback, wouldRepeat);
     incrementStreak();
     setShowFeedback(false);
 
-    // Update streak at risk notification with new streak
-    if (user) {
-      const newStreak = user.streak + 1; // Streak just incremented
-      await NotificationService.scheduleStreakAtRisk(newStreak);
+    // Cancel ALL notifications to ensure clean slate
+    console.log('🗑️ Cancelling all notifications...');
+    await NotificationService.cancelAll();
+    console.log('✅ All notifications cancelled');
+
+    // Verify cancellation
+    console.log('📋 Notifications AFTER cancellation:');
+    await NotificationService.listAll();
+
+    // Schedule the next challenge notification based on user's cadence
+    if (user?.notificationTime) {
+      await NotificationService.scheduleNextChallengeNotification(
+        user.notificationTime,
+        user.cadence
+      );
+
+      // Debug: list all scheduled notifications (with small delay for system to register)
+      setTimeout(async () => {
+        await NotificationService.listAll();
+      }, 500);
     }
 
     // Check for newly unlocked achievements
@@ -320,12 +364,7 @@ export default function HomeScreen() {
       }
     }
 
-    // Assign new challenge after completion
-    if (user) {
-      const newAssignment = AssignerService.assignDailyChallenge(user, history);
-      setCurrentAssignment(newAssignment);
-      // Note: remainingSeconds will be synced by useEffect based on new template
-    }
+    // Note: The useEffect on mount will handle assigning the next challenge when needed
   };
 
   const handleSwap = () => {
